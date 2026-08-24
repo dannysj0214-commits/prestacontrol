@@ -1,6 +1,6 @@
 // ==========================================
 // PRESTACONTROL - SISTEMA COMPLETO
-// VERSIÓN CORREGIDA - EDICIÓN FUNCIONANDO
+// VERSIÓN CORREGIDA - CON VERIFICACIONES
 // ==========================================
 
 // ===== CONFIGURACIÓN =====
@@ -58,20 +58,38 @@ function getClientesIniciales() {
 // ===== INICIALIZACIÓN =====
 document.addEventListener('DOMContentLoaded', function() {
     cargarDatosLocales();
-    document.getElementById('fechaInicio').value = new Date().toISOString().split('T')[0];
-    document.getElementById('formCliente').addEventListener('submit', guardarCliente);
-    document.getElementById('fechaActual').textContent = new Date().toLocaleDateString('es-ES', {
-        weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
-    });
     
-    document.getElementById('tipoPlazo').addEventListener('change', function() {
-        const campoPersonalizado = document.getElementById('campoDiasPago');
-        if (this.value === 'personalizado' || this.value === 'quincenal') {
-            campoPersonalizado.style.display = 'grid';
-        } else {
-            campoPersonalizado.style.display = 'none';
-        }
-    });
+    // Verificar que los elementos existan antes de usarlos
+    const fechaInicio = document.getElementById('fechaInicio');
+    if (fechaInicio) {
+        fechaInicio.value = new Date().toISOString().split('T')[0];
+    }
+    
+    const formCliente = document.getElementById('formCliente');
+    if (formCliente) {
+        formCliente.addEventListener('submit', guardarCliente);
+    }
+    
+    const fechaActual = document.getElementById('fechaActual');
+    if (fechaActual) {
+        fechaActual.textContent = new Date().toLocaleDateString('es-ES', {
+            weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
+        });
+    }
+    
+    const tipoPlazo = document.getElementById('tipoPlazo');
+    if (tipoPlazo) {
+        tipoPlazo.addEventListener('change', function() {
+            const campoPersonalizado = document.getElementById('campoDiasPago');
+            if (campoPersonalizado) {
+                if (this.value === 'personalizado' || this.value === 'quincenal') {
+                    campoPersonalizado.style.display = 'grid';
+                } else {
+                    campoPersonalizado.style.display = 'none';
+                }
+            }
+        });
+    }
     
     renderizarTodo();
     setTimeout(verificarAtrasos, 1500);
@@ -136,7 +154,246 @@ function guardarHistorial() {
     localStorage.setItem('historialPagos', JSON.stringify(historialPagos));
 }
 
-// ===== REPORTAR CUOTA =====
+// ==========================================
+// FUNCIÓN PARA OBTENER ELEMENTO SEGURO
+// ==========================================
+
+function getElement(id) {
+    const el = document.getElementById(id);
+    if (!el) {
+        console.warn(`⚠️ Elemento no encontrado: #${id}`);
+    }
+    return el;
+}
+
+// ==========================================
+// EDITAR CLIENTE - CORREGIDO
+// ==========================================
+
+function editarCliente(id) {
+    console.log('🔍 Editando cliente ID:', id);
+    
+    // Buscar el cliente
+    const cliente = clientes.find(c => c.id === id);
+    if (!cliente) {
+        mostrarNotificacion('Cliente no encontrado', 'error');
+        console.error('❌ Cliente no encontrado:', id);
+        return;
+    }
+    
+    console.log('✅ Datos del cliente:', cliente);
+    
+    // Verificar que todos los elementos existan
+    const elementos = {
+        clienteId: getElement('clienteId'),
+        nombre: getElement('nombre'),
+        telefono: getElement('telefono'),
+        email: getElement('email'),
+        monto: getElement('monto'),
+        fechaInicio: getElement('fechaInicio'),
+        tipoPlazo: getElement('tipoPlazo'),
+        plazo: getElement('plazo'),
+        diasPago: getElement('diasPago'),
+        diaFijo: getElement('diaFijo'),
+        campoDiasPago: getElement('campoDiasPago'),
+        formTitulo: getElement('formTitulo'),
+        btnSubmit: getElement('btnSubmit'),
+        btnCancelar: getElement('btnCancelar')
+    };
+    
+    // Verificar que todos los elementos existan
+    for (const [key, el] of Object.entries(elementos)) {
+        if (!el) {
+            console.error(`❌ Elemento #${key} no encontrado en el DOM`);
+            mostrarNotificacion(`Error: elemento ${key} no encontrado`, 'error');
+            return;
+        }
+    }
+    
+    // Llenar el formulario con los datos del cliente
+    elementos.clienteId.value = cliente.id;
+    elementos.nombre.value = cliente.nombre;
+    elementos.telefono.value = cliente.telefono !== '—' ? cliente.telefono : '';
+    elementos.email.value = cliente.email !== '—' ? cliente.email : '';
+    elementos.monto.value = cliente.monto;
+    elementos.fechaInicio.value = cliente.fechaInicio;
+    elementos.tipoPlazo.value = cliente.tipoPlazo;
+    elementos.plazo.value = cliente.plazo || '';
+    elementos.diasPago.value = cliente.diasPago || '';
+    elementos.diaFijo.value = cliente.diaFijo || '';
+    
+    // Mostrar campos personalizados si es necesario
+    if (cliente.tipoPlazo === 'personalizado' || cliente.tipoPlazo === 'quincenal') {
+        elementos.campoDiasPago.style.display = 'grid';
+    } else {
+        elementos.campoDiasPago.style.display = 'none';
+    }
+    
+    // Cambiar el título y botones del formulario
+    elementos.formTitulo.textContent = 'Editar Cliente';
+    elementos.btnSubmit.innerHTML = '<i class="fas fa-save"></i> Actualizar Cliente';
+    elementos.btnCancelar.style.display = 'inline-block';
+    
+    // Hacer scroll al formulario
+    const seccionClientes = getElement('seccion-clientes');
+    if (seccionClientes) {
+        seccionClientes.scrollIntoView({ behavior: 'smooth' });
+    }
+    
+    mostrarNotificacion(`✏️ Editando cliente: ${cliente.nombre}`, 'warning');
+}
+
+// ==========================================
+// CANCELAR EDICIÓN - CORREGIDO
+// ==========================================
+
+function cancelarEdicion() {
+    console.log('❌ Cancelando edición');
+    
+    const elementos = {
+        clienteId: getElement('clienteId'),
+        formCliente: getElement('formCliente'),
+        fechaInicio: getElement('fechaInicio'),
+        campoDiasPago: getElement('campoDiasPago'),
+        formTitulo: getElement('formTitulo'),
+        btnSubmit: getElement('btnSubmit'),
+        btnCancelar: getElement('btnCancelar')
+    };
+    
+    if (elementos.clienteId) elementos.clienteId.value = '';
+    if (elementos.formCliente) elementos.formCliente.reset();
+    if (elementos.fechaInicio) {
+        elementos.fechaInicio.value = new Date().toISOString().split('T')[0];
+    }
+    if (elementos.campoDiasPago) elementos.campoDiasPago.style.display = 'none';
+    if (elementos.formTitulo) elementos.formTitulo.textContent = 'Nuevo Cliente';
+    if (elementos.btnSubmit) {
+        elementos.btnSubmit.innerHTML = '<i class="fas fa-plus-circle"></i> Agregar Cliente';
+    }
+    if (elementos.btnCancelar) elementos.btnCancelar.style.display = 'none';
+}
+
+// ==========================================
+// GUARDAR CLIENTE - CORREGIDO
+// ==========================================
+
+function guardarCliente(event) {
+    event.preventDefault();
+    
+    const elementos = {
+        clienteId: getElement('clienteId'),
+        nombre: getElement('nombre'),
+        telefono: getElement('telefono'),
+        email: getElement('email'),
+        monto: getElement('monto'),
+        fechaInicio: getElement('fechaInicio'),
+        tipoPlazo: getElement('tipoPlazo'),
+        plazo: getElement('plazo'),
+        diasPago: getElement('diasPago'),
+        diaFijo: getElement('diaFijo'),
+        formCliente: getElement('formCliente'),
+        campoDiasPago: getElement('campoDiasPago')
+    };
+    
+    // Verificar elementos esenciales
+    if (!elementos.nombre || !elementos.monto || !elementos.fechaInicio) {
+        mostrarNotificacion('Error: elementos del formulario no encontrados', 'error');
+        return;
+    }
+    
+    const id = elementos.clienteId ? elementos.clienteId.value : '';
+    const nombre = elementos.nombre.value.trim();
+    const telefono = elementos.telefono ? elementos.telefono.value.trim() : '';
+    const email = elementos.email ? elementos.email.value.trim() : '';
+    const monto = parseFloat(elementos.monto.value);
+    const fechaInicio = elementos.fechaInicio.value;
+    const tipoPlazo = elementos.tipoPlazo ? elementos.tipoPlazo.value : 'sin_definir';
+    const plazo = parseInt(elementos.plazo ? elementos.plazo.value : '0') || 0;
+    const diasPago = elementos.diasPago ? elementos.diasPago.value.trim() : '';
+    const diaFijo = elementos.diaFijo ? elementos.diaFijo.value.trim() : '';
+    
+    if (!nombre || !monto || !fechaInicio) {
+        mostrarNotificacion('Completa todos los campos obligatorios', 'error');
+        return;
+    }
+    
+    if (id) {
+        // EDITAR CLIENTE EXISTENTE
+        const clienteExistente = clientes.find(c => c.id === parseInt(id));
+        if (!clienteExistente) {
+            mostrarNotificacion('Cliente no encontrado', 'error');
+            return;
+        }
+        
+        const montoAnterior = clienteExistente.monto;
+        
+        clienteExistente.nombre = nombre;
+        clienteExistente.telefono = telefono || '—';
+        clienteExistente.email = email || '—';
+        clienteExistente.monto = monto;
+        clienteExistente.fechaInicio = fechaInicio;
+        clienteExistente.tipoPlazo = tipoPlazo;
+        clienteExistente.plazo = plazo;
+        clienteExistente.diasPago = diasPago || '';
+        clienteExistente.diaFijo = diaFijo || '';
+        
+        if (montoAnterior !== monto) {
+            const cuotasPagadas = cuotas.filter(c => c.clienteId === clienteExistente.id && c.estado === 'pagada');
+            const totalPagado = cuotasPagadas.reduce((sum, c) => sum + c.monto, 0);
+            clienteExistente.saldo = monto - totalPagado;
+        }
+        
+        guardarClientes();
+        
+        cuotas = cuotas.filter(c => c.clienteId !== clienteExistente.id);
+        if (tipoPlazo !== 'sin_definir' && plazo > 0) {
+            generarCuotasCliente(clienteExistente);
+        }
+        guardarCuotas();
+        
+        mostrarNotificacion(`✅ Cliente "${nombre}" actualizado correctamente`, 'success');
+        cancelarEdicion();
+        
+    } else {
+        // NUEVO CLIENTE
+        const nuevoCliente = {
+            id: Date.now(),
+            nombre,
+            telefono: telefono || '—',
+            email: email || '—',
+            monto,
+            fechaInicio,
+            tipoPlazo,
+            plazo,
+            saldo: monto,
+            diasPago: diasPago || '',
+            diaFijo: diaFijo || ''
+        };
+        
+        clientes.push(nuevoCliente);
+        guardarClientes();
+        
+        if (tipoPlazo !== 'sin_definir' && plazo > 0) {
+            generarCuotasCliente(nuevoCliente);
+            guardarCuotas();
+        }
+        
+        if (elementos.formCliente) elementos.formCliente.reset();
+        if (elementos.fechaInicio) {
+            elementos.fechaInicio.value = new Date().toISOString().split('T')[0];
+        }
+        if (elementos.campoDiasPago) elementos.campoDiasPago.style.display = 'none';
+        
+        mostrarNotificacion(`✅ Cliente "${nombre}" agregado con ${formatoCOP(monto)}`, 'success');
+    }
+    
+    renderizarTodo();
+}
+
+// ==========================================
+// REPORTAR CUOTA
+// ==========================================
+
 function reportarCuota(clienteId, montoPagar) {
     const cliente = clientes.find(c => c.id === clienteId);
     if (!cliente) {
@@ -224,7 +481,10 @@ function reportarCuota(clienteId, montoPagar) {
     renderizarTodo();
 }
 
-// ===== REPORTAR CUOTA PERSONALIZADA =====
+// ==========================================
+// REPORTAR CUOTA PERSONALIZADA
+// ==========================================
+
 function reportarCuotaPersonalizada(clienteId) {
     const cliente = clientes.find(c => c.id === clienteId);
     if (!cliente) return;
@@ -245,7 +505,10 @@ function reportarCuotaPersonalizada(clienteId) {
     reportarCuota(clienteId, monto);
 }
 
-// ===== VER HISTORIAL =====
+// ==========================================
+// VER HISTORIAL
+// ==========================================
+
 function verHistorialCliente(clienteId) {
     const cliente = clientes.find(c => c.id === clienteId);
     if (!cliente) return;
@@ -271,7 +534,10 @@ function verHistorialCliente(clienteId) {
     mostrarNotificacion(mensaje, 'success');
 }
 
-// ===== GENERAR CUOTAS =====
+// ==========================================
+// GENERAR CUOTAS
+// ==========================================
+
 function generarCuotasCliente(cliente) {
     if (cliente.tipoPlazo === 'sin_definir' || cliente.plazo <= 0) return;
     
@@ -351,154 +617,10 @@ function generarCuotasCliente(cliente) {
     }
 }
 
-// ===== GUARDAR CLIENTE (NUEVO O EDICIÓN) =====
-function guardarCliente(event) {
-    event.preventDefault();
-    
-    const id = document.getElementById('clienteId').value;
-    const nombre = document.getElementById('nombre').value.trim();
-    const telefono = document.getElementById('telefono').value.trim();
-    const email = document.getElementById('email').value.trim();
-    const monto = parseFloat(document.getElementById('monto').value);
-    const fechaInicio = document.getElementById('fechaInicio').value;
-    const tipoPlazo = document.getElementById('tipoPlazo').value;
-    const plazo = parseInt(document.getElementById('plazo').value) || 0;
-    const diasPago = document.getElementById('diasPago').value.trim();
-    const diaFijo = document.getElementById('diaFijo').value.trim();
-    
-    if (!nombre || !monto || !fechaInicio) {
-        mostrarNotificacion('Completa todos los campos obligatorios', 'error');
-        return;
-    }
-    
-    if (id) {
-        // EDITAR CLIENTE EXISTENTE
-        const clienteExistente = clientes.find(c => c.id === parseInt(id));
-        if (!clienteExistente) {
-            mostrarNotificacion('Cliente no encontrado', 'error');
-            return;
-        }
-        
-        const montoAnterior = clienteExistente.monto;
-        
-        clienteExistente.nombre = nombre;
-        clienteExistente.telefono = telefono || '—';
-        clienteExistente.email = email || '—';
-        clienteExistente.monto = monto;
-        clienteExistente.fechaInicio = fechaInicio;
-        clienteExistente.tipoPlazo = tipoPlazo;
-        clienteExistente.plazo = plazo;
-        clienteExistente.diasPago = diasPago || '';
-        clienteExistente.diaFijo = diaFijo || '';
-        
-        if (montoAnterior !== monto) {
-            const cuotasPagadas = cuotas.filter(c => c.clienteId === clienteExistente.id && c.estado === 'pagada');
-            const totalPagado = cuotasPagadas.reduce((sum, c) => sum + c.monto, 0);
-            clienteExistente.saldo = monto - totalPagado;
-        }
-        
-        guardarClientes();
-        
-        cuotas = cuotas.filter(c => c.clienteId !== clienteExistente.id);
-        if (tipoPlazo !== 'sin_definir' && plazo > 0) {
-            generarCuotasCliente(clienteExistente);
-        }
-        guardarCuotas();
-        
-        mostrarNotificacion(`Cliente "${nombre}" actualizado correctamente`, 'success');
-        cancelarEdicion();
-        
-    } else {
-        // NUEVO CLIENTE
-        const nuevoCliente = {
-            id: Date.now(),
-            nombre,
-            telefono: telefono || '—',
-            email: email || '—',
-            monto,
-            fechaInicio,
-            tipoPlazo,
-            plazo,
-            saldo: monto,
-            diasPago: diasPago || '',
-            diaFijo: diaFijo || ''
-        };
-        
-        clientes.push(nuevoCliente);
-        guardarClientes();
-        
-        if (tipoPlazo !== 'sin_definir' && plazo > 0) {
-            generarCuotasCliente(nuevoCliente);
-            guardarCuotas();
-        }
-        
-        document.getElementById('formCliente').reset();
-        document.getElementById('fechaInicio').value = new Date().toISOString().split('T')[0];
-        document.getElementById('campoDiasPago').style.display = 'none';
-        
-        mostrarNotificacion(`Cliente "${nombre}" agregado con ${formatoCOP(monto)}`, 'success');
-    }
-    
-    renderizarTodo();
-}
+// ==========================================
+// ELIMINAR CLIENTE
+// ==========================================
 
-// ===== EDITAR CLIENTE =====
-function editarCliente(id) {
-    console.log('🔍 Editando cliente ID:', id);
-    
-    const cliente = clientes.find(c => c.id === id);
-    if (!cliente) {
-        mostrarNotificacion('Cliente no encontrado', 'error');
-        console.error('❌ Cliente no encontrado:', id);
-        return;
-    }
-    
-    console.log('✅ Datos del cliente:', cliente);
-    
-    // Llenar el formulario con los datos del cliente
-    document.getElementById('clienteId').value = cliente.id;
-    document.getElementById('nombre').value = cliente.nombre;
-    document.getElementById('telefono').value = cliente.telefono !== '—' ? cliente.telefono : '';
-    document.getElementById('email').value = cliente.email !== '—' ? cliente.email : '';
-    document.getElementById('monto').value = cliente.monto;
-    document.getElementById('fechaInicio').value = cliente.fechaInicio;
-    document.getElementById('tipoPlazo').value = cliente.tipoPlazo;
-    document.getElementById('plazo').value = cliente.plazo || '';
-    document.getElementById('diasPago').value = cliente.diasPago || '';
-    document.getElementById('diaFijo').value = cliente.diaFijo || '';
-    
-    // Mostrar campos personalizados si es necesario
-    if (cliente.tipoPlazo === 'personalizado' || cliente.tipoPlazo === 'quincenal') {
-        document.getElementById('campoDiasPago').style.display = 'grid';
-    } else {
-        document.getElementById('campoDiasPago').style.display = 'none';
-    }
-    
-    // Cambiar el título y botones del formulario
-    document.getElementById('formTitulo').textContent = 'Editar Cliente';
-    document.getElementById('btnSubmit').innerHTML = '<i class="fas fa-save"></i> Actualizar Cliente';
-    document.getElementById('btnCancelar').style.display = 'inline-block';
-    
-    // Hacer scroll al formulario
-    document.getElementById('seccion-clientes').scrollIntoView({ behavior: 'smooth' });
-    
-    mostrarNotificacion(`Editando cliente: ${cliente.nombre}`, 'warning');
-}
-
-// ===== CANCELAR EDICIÓN =====
-function cancelarEdicion() {
-    console.log('❌ Cancelando edición');
-    
-    document.getElementById('clienteId').value = '';
-    document.getElementById('formCliente').reset();
-    document.getElementById('fechaInicio').value = new Date().toISOString().split('T')[0];
-    document.getElementById('campoDiasPago').style.display = 'none';
-    document.getElementById('formTitulo').textContent = 'Nuevo Cliente';
-    document.getElementById('btnSubmit').innerHTML = '<i class="fas fa-plus-circle"></i> Agregar Cliente';
-    document.getElementById('btnCancelar').style.display = 'none';
-}
-
-// ===== ELIMINAR CLIENTE =====
 function eliminarCliente(id) {
     const cliente = clientes.find(c => c.id === id);
     if (!cliente) return;
@@ -516,7 +638,10 @@ function eliminarCliente(id) {
     mostrarNotificacion(`Cliente "${cliente.nombre}" eliminado`, 'success');
 }
 
-// ===== VERIFICAR ATRASOS =====
+// ==========================================
+// VERIFICAR ATRASOS
+// ==========================================
+
 function verificarAtrasos() {
     const hoy = new Date().toISOString().split('T')[0];
     let atrasados = [];
@@ -531,16 +656,23 @@ function verificarAtrasos() {
     if (atrasados.length > 0) {
         guardarCuotas();
         mostrarNotificacion(`${atrasados.length} cliente(s) atrasado(s)`, 'error');
-        document.getElementById('badgeNotificaciones').textContent = atrasados.length;
-        document.getElementById('navBadge').textContent = atrasados.length;
+        const badgeNotificaciones = document.getElementById('badgeNotificaciones');
+        const navBadge = document.getElementById('navBadge');
+        if (badgeNotificaciones) badgeNotificaciones.textContent = atrasados.length;
+        if (navBadge) navBadge.textContent = atrasados.length;
         renderizarTodo();
     } else {
-        document.getElementById('badgeNotificaciones').textContent = '0';
-        document.getElementById('navBadge').textContent = '0';
+        const badgeNotificaciones = document.getElementById('badgeNotificaciones');
+        const navBadge = document.getElementById('navBadge');
+        if (badgeNotificaciones) badgeNotificaciones.textContent = '0';
+        if (navBadge) navBadge.textContent = '0';
     }
 }
 
-// ===== GENERAR CUOTAS PENDIENTES =====
+// ==========================================
+// GENERAR CUOTAS PENDIENTES
+// ==========================================
+
 function generarCuotasPendientes() {
     if (clientes.length === 0) {
         mostrarNotificacion('No hay clientes para generar cuotas', 'error');
@@ -560,7 +692,10 @@ function generarCuotasPendientes() {
     mostrarNotificacion('Cuotas regeneradas correctamente', 'success');
 }
 
-// ===== FILTRAR CLIENTES POR PLAZO =====
+// ==========================================
+// FILTROS
+// ==========================================
+
 function filtrarClientesPorPlazo(tipo) {
     filtroPlazoActual = tipo;
     document.querySelectorAll('.filtro-plazo-btn').forEach(btn => {
@@ -569,7 +704,6 @@ function filtrarClientesPorPlazo(tipo) {
     renderizarClientes();
 }
 
-// ===== FILTRAR CALENDARIO POR PERÍODO =====
 function filtrarCalendario(periodo) {
     filtroPeriodoActual = periodo;
     document.querySelectorAll('.periodo-btn').forEach(btn => {
@@ -578,7 +712,10 @@ function filtrarCalendario(periodo) {
     renderizarCalendario();
 }
 
-// ===== SINCRONIZAR CON NETLIFY =====
+// ==========================================
+// SINCRONIZAR CON NETLIFY
+// ==========================================
+
 function sincronizarDatos() {
     mostrarNotificacion('Sincronizando con Netlify Database...', 'warning');
     setTimeout(() => {
@@ -606,6 +743,7 @@ function renderizarTodo() {
 
 function renderizarClientes() {
     const container = document.getElementById('listaClientes');
+    if (!container) return;
     
     let clientesFiltrados = clientes;
     if (filtroPlazoActual !== 'todos') {
@@ -751,8 +889,13 @@ function renderizarClientes() {
 
 function renderizarCalendario() {
     const container = document.getElementById('calendarioCuotas');
-    const filtroCliente = document.getElementById('filtroCliente').value;
-    const filtroEstado = document.getElementById('filtroEstado').value;
+    if (!container) return;
+    
+    const filtroCliente = document.getElementById('filtroCliente');
+    const filtroEstado = document.getElementById('filtroEstado');
+    
+    const clienteId = filtroCliente ? filtroCliente.value : 'todos';
+    const estado = filtroEstado ? filtroEstado.value : 'todos';
     
     let cuotasFiltradas = [...cuotas];
     
@@ -781,12 +924,12 @@ function renderizarCalendario() {
         });
     }
     
-    if (filtroCliente !== 'todos') {
-        cuotasFiltradas = cuotasFiltradas.filter(c => c.clienteId === parseInt(filtroCliente));
+    if (clienteId !== 'todos') {
+        cuotasFiltradas = cuotasFiltradas.filter(c => c.clienteId === parseInt(clienteId));
     }
     
-    if (filtroEstado !== 'todos') {
-        cuotasFiltradas = cuotasFiltradas.filter(c => c.estado === filtroEstado);
+    if (estado !== 'todos') {
+        cuotasFiltradas = cuotasFiltradas.filter(c => c.estado === estado);
     }
     
     cuotasFiltradas.sort((a, b) => a.fecha.localeCompare(b.fecha));
@@ -922,16 +1065,27 @@ function renderizarProximosVencimientos() {
 }
 
 function actualizarEstadisticas() {
-    document.getElementById('totalClientes').textContent = clientes.length;
+    const totalClientes = document.getElementById('totalClientes');
+    const totalPrestado = document.getElementById('totalPrestado');
+    const cuotasPendientes = document.getElementById('cuotasPendientes');
+    const cuotasAtrasadas = document.getElementById('cuotasAtrasadas');
     
-    const totalPrestado = clientes.reduce((sum, c) => sum + c.monto, 0);
-    document.getElementById('totalPrestado').textContent = formatoCOP(totalPrestado);
+    if (totalClientes) totalClientes.textContent = clientes.length;
     
-    const pendientes = cuotas.filter(c => c.estado === 'pendiente').length;
-    document.getElementById('cuotasPendientes').textContent = pendientes;
+    if (totalPrestado) {
+        const total = clientes.reduce((sum, c) => sum + c.monto, 0);
+        totalPrestado.textContent = formatoCOP(total);
+    }
     
-    const atrasadas = cuotas.filter(c => c.estado === 'atrasada').length;
-    document.getElementById('cuotasAtrasadas').textContent = atrasadas;
+    if (cuotasPendientes) {
+        const pendientes = cuotas.filter(c => c.estado === 'pendiente').length;
+        cuotasPendientes.textContent = pendientes;
+    }
+    
+    if (cuotasAtrasadas) {
+        const atrasadas = cuotas.filter(c => c.estado === 'atrasada').length;
+        cuotasAtrasadas.textContent = atrasadas;
+    }
 }
 
 function actualizarPlazos() {
@@ -940,19 +1094,24 @@ function actualizarPlazos() {
     const quincenales = clientes.filter(c => c.tipoPlazo === 'quincenal');
     const mensuales = clientes.filter(c => c.tipoPlazo === 'mensual' || c.tipoPlazo === 'personalizado');
     
-    document.getElementById('clientesDiario').textContent = diarios.length;
-    document.getElementById('clientesSemanal').textContent = semanales.length;
-    document.getElementById('clientesQuincenal').textContent = quincenales.length;
-    document.getElementById('clientesMensual').textContent = mensuales.length;
+    const clientesDiario = document.getElementById('clientesDiario');
+    const clientesSemanal = document.getElementById('clientesSemanal');
+    const clientesQuincenal = document.getElementById('clientesQuincenal');
+    const clientesMensual = document.getElementById('clientesMensual');
+    const montoDiario = document.getElementById('montoDiario');
+    const montoSemanal = document.getElementById('montoSemanal');
+    const montoQuincenal = document.getElementById('montoQuincenal');
+    const montoMensual = document.getElementById('montoMensual');
     
-    document.getElementById('montoDiario').textContent = 
-        formatoCOP(diarios.reduce((sum, c) => sum + c.monto, 0));
-    document.getElementById('montoSemanal').textContent = 
-        formatoCOP(semanales.reduce((sum, c) => sum + c.monto, 0));
-    document.getElementById('montoQuincenal').textContent = 
-        formatoCOP(quincenales.reduce((sum, c) => sum + c.monto, 0));
-    document.getElementById('montoMensual').textContent = 
-        formatoCOP(mensuales.reduce((sum, c) => sum + c.monto, 0));
+    if (clientesDiario) clientesDiario.textContent = diarios.length;
+    if (clientesSemanal) clientesSemanal.textContent = semanales.length;
+    if (clientesQuincenal) clientesQuincenal.textContent = quincenales.length;
+    if (clientesMensual) clientesMensual.textContent = mensuales.length;
+    
+    if (montoDiario) montoDiario.textContent = formatoCOP(diarios.reduce((sum, c) => sum + c.monto, 0));
+    if (montoSemanal) montoSemanal.textContent = formatoCOP(semanales.reduce((sum, c) => sum + c.monto, 0));
+    if (montoQuincenal) montoQuincenal.textContent = formatoCOP(quincenales.reduce((sum, c) => sum + c.monto, 0));
+    if (montoMensual) montoMensual.textContent = formatoCOP(mensuales.reduce((sum, c) => sum + c.monto, 0));
 }
 
 function actualizarFiltros() {
@@ -972,19 +1131,27 @@ function actualizarFiltros() {
     if (valorActual) select.value = valorActual;
 }
 
-// ===== MOSTRAR SECCIÓN =====
+// ==========================================
+// MOSTRAR SECCIÓN
+// ==========================================
+
 function mostrarSeccion(seccion) {
     document.querySelectorAll('.seccion').forEach(s => s.classList.remove('active'));
     document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
     
-    document.getElementById(`seccion-${seccion}`).classList.add('active');
-    document.querySelector(`.nav-item[data-section="${seccion}"]`).classList.add('active');
-    document.getElementById('seccionActual').textContent = 
-        seccion.charAt(0).toUpperCase() + seccion.slice(1);
+    const seccionEl = document.getElementById(`seccion-${seccion}`);
+    const navEl = document.querySelector(`.nav-item[data-section="${seccion}"]`);
+    const seccionActual = document.getElementById('seccionActual');
+    
+    if (seccionEl) seccionEl.classList.add('active');
+    if (navEl) navEl.classList.add('active');
+    if (seccionActual) {
+        seccionActual.textContent = seccion.charAt(0).toUpperCase() + seccion.slice(1);
+    }
     
     // CERRAR EL MENÚ AUTOMÁTICAMENTE
     const sidebar = document.getElementById('sidebar');
-    if (sidebar.classList.contains('open')) {
+    if (sidebar && sidebar.classList.contains('open')) {
         sidebar.classList.remove('open');
     }
     
@@ -994,19 +1161,22 @@ function mostrarSeccion(seccion) {
     }
 }
 
-// ===== TOGGLE SIDEBAR =====
+// ==========================================
+// TOGGLE SIDEBAR
+// ==========================================
+
 function toggleSidebar() {
     const sidebar = document.getElementById('sidebar');
     const overlay = document.getElementById('sidebarOverlay');
     
-    sidebar.classList.toggle('open');
-    
-    if (overlay) {
-        overlay.classList.toggle('active');
-    }
+    if (sidebar) sidebar.classList.toggle('open');
+    if (overlay) overlay.classList.toggle('active');
 }
 
-// ===== EXPORTAR CSV =====
+// ==========================================
+// EXPORTAR CSV
+// ==========================================
+
 function exportarCSV() {
     if (clientes.length === 0) {
         mostrarNotificacion('No hay datos para exportar', 'error');
@@ -1032,7 +1202,10 @@ function exportarCSV() {
     mostrarNotificacion('CSV exportado correctamente', 'success');
 }
 
-// ===== REPORTES PDF =====
+// ==========================================
+// REPORTES PDF
+// ==========================================
+
 function generarReporteGeneral() {
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF('p', 'mm', 'a4');
@@ -1254,7 +1427,10 @@ function generarReporteAtrasos() {
     mostrarNotificacion('PDF generado correctamente', 'success');
 }
 
-// ===== UTILIDADES =====
+// ==========================================
+// UTILIDADES
+// ==========================================
+
 function formatearFecha(fecha) {
     const partes = fecha.split('-');
     const meses = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 
@@ -1264,6 +1440,11 @@ function formatearFecha(fecha) {
 
 function mostrarNotificacion(mensaje, tipo = 'success') {
     const container = document.getElementById('notificaciones');
+    if (!container) {
+        console.log('📢 Notificación:', mensaje);
+        return;
+    }
+    
     const notif = document.createElement('div');
     notif.className = `notificacion ${tipo}`;
     notif.textContent = mensaje;
