@@ -1,0 +1,11 @@
+{
+  "name": "prestacontrol",
+  "version": "1.0.0",
+  "description": "Sistema de contabilidad de préstamos en pesos colombianos",
+  "main": "script.js",
+  "dependencies": {
+    "jspdf": "^2.5.1",
+    "jspdf-autotable": "^3.8.2",
+    "chart.js": "^4.4.0"
+  }
+}

@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PrestaControl | Sistema de Préstamos</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+</head>
+<body>
+    <!-- SIDEBAR -->
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <div class="logo-icon">💰</div>
+            <h2>Presta<span>Control</span></h2>
+        </div>
+        
+        <nav class="sidebar-nav">
+            <a href="#" class="nav-item active" data-section="dashboard" onclick="mostrarSeccion('dashboard')">
+                <i class="fas fa-chart-pie"></i>
+                <span>Dashboard</span>
+                <span class="nav-badge" id="navBadge">0</span>
+            </a>
+            <a href="#" class="nav-item" data-section="clientes" onclick="mostrarSeccion('clientes')">
+                <i class="fas fa-users"></i>
+                <span>Clientes</span>
+            </a>
+            <a href="#" class="nav-item" data-section="cuotas" onclick="mostrarSeccion('cuotas')">
+                <i class="fas fa-calendar-alt"></i>
+                <span>Calendario</span>
+            </a>
+            <a href="#" class="nav-item" data-section="reportes" onclick="mostrarSeccion('reportes')">
+                <i class="fas fa-file-pdf"></i>
+                <span>Reportes</span>
+            </a>
+        </nav>
+        
+        <div class="sidebar-footer">
+            <div class="status-indicator">
+                <span class="status-dot online"></span>
+                <span>Conectado</span>
+            </div>
+            <button onclick="sincronizarDatos()" class="btn-sync">
+                <i class="fas fa-sync-alt"></i>
+                Sincronizar
+            </button>
+        </div>
+    </aside>
+
+    <!-- CONTENIDO PRINCIPAL -->
+    <main class="main-content">
+        <!-- HEADER -->
+        <header class="top-header">
+            <div class="header-left">
+                <button class="menu-toggle" onclick="toggleSidebar()">
+                    <i class="fas fa-bars"></i>
+                </button>
+                <div class="breadcrumb">
+                    <i class="fas fa-home"></i>
+                    <span id="seccionActual">Dashboard</span>
+                </div>
+            </div>
+            <div class="header-right">
+                <div class="header-date" id="fechaActual"></div>
+                <button class="btn-notificacion" onclick="verificarAtrasos()">
+                    <i class="fas fa-bell"></i>
+                    <span class="badge" id="badgeNotificaciones">0</span>
+                </button>
+                <div class="user-profile">
+                    <i class="fas fa-user-circle"></i>
+                    <span>Admin</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- ===== SECCIÓN: DASHBOARD ===== -->
+        <section id="seccion-dashboard" class="seccion active">
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-icon" style="background: #e3f2fd;">
+                        <i class="fas fa-users" style="color: #1a237e;"></i>
+                    </div>
+                    <div class="stat-info">
+                        <span class="stat-label">Total Clientes</span>
+                        <span class="stat-number" id="totalClientes">0</span>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon" style="background: #e8f5e9;">
+                        <i class="fas fa-dollar-sign" style="color: #2e7d32;"></i>
+                    </div>
+                    <div class="stat-info">
+                        <span class="stat-label">Prestado Total</span>
+                        <span class="stat-number" id="totalPrestado">$ 0</span>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon" style="background: #fff3e0;">
+                        <i class="fas fa-clock" style="color: #e65100;"></i>
+                    </div>
+                    <div class="stat-info">
+                        <span class="stat-label">Cuotas Pendientes</span>
+                        <span class="stat-number" id="cuotasPendientes">0</span>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon" style="background: #ffebee;">
+                        <i class="fas fa-exclamation-triangle" style="color: #c62828;"></i>
+                    </div>
+                    <div class="stat-info">
+                        <span class="stat-label">Atrasados</span>
+                        <span class="stat-number" id="cuotasAtrasadas">0</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="dashboard-grid">
+                <div class="card">
+                    <h3><i class="fas fa-chart-line"></i> Resumen de Cobros</h3>
+                    <div class="chart-container">
+                        <canvas id="chartCobros"></canvas>
+                    </div>
+                </div>
+                <div class="card">
+                    <h3><i class="fas fa-clock"></i> Próximos Vencimientos</h3>
+                    <div id="proximosVencimientos" class="proximos-vencimientos">
+                        <p class="texto-centrado">Cargando...</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="plazos-grid">
+                <div class="plazo-card plazo-diario">
+                    <div class="plazo-header">
+                        <i class="fas fa-calendar-day"></i>
+                        <h4>Diario</h4>
+                    </div>
+                    <div class="plazo-body">
+                        <span class="plazo-count" id="clientesDiario">0</span>
+                        <span class="plazo-label">clientes</span>
+                    </div>
+                    <div class="plazo-footer">
+                        <span class="plazo-monto" id="montoDiario">$ 0</span>
+                    </div>
+                </div>
+                <div class="plazo-card plazo-semanal">
+                    <div class="plazo-header">
+                        <i class="fas fa-calendar-week"></i>
+                        <h4>Semanal</h4>
+                    </div>
+                    <div class="plazo-body">
+                        <span class="plazo-count" id="clientesSemanal">0</span>
+                        <span class="plazo-label">clientes</span>
+                    </div>
+                    <div class="plazo-footer">
+                        <span class="plazo-monto" id="montoSemanal">$ 0</span>
+                    </div>
+                </div>
+                <div class="plazo-card plazo-quincenal">
+                    <div class="plazo-header">
+                        <i class="fas fa-calendar-alt"></i>
+                        <h4>Quincenal</h4>
+                    </div>
+                    <div class="plazo-body">
+                        <span class="plazo-count" id="clientesQuincenal">0</span>
+                        <span class="plazo-label">clientes</span>
+                    </div>
+                    <div class="plazo-footer">
+                        <span class="plazo-monto" id="montoQuincenal">$ 0</span>
+                    </div>
+                </div>
+                <div class="plazo-card plazo-mensual">
+                    <div class="plazo-header">
+                        <i class="fas fa-calendar-alt"></i>
+                        <h4>Mensual</h4>
+                    </div>
+                    <div class="plazo-body">
+                        <span class="plazo-count" id="clientesMensual">0</span>
+                        <span class="plazo-label">clientes</span>
+                    </div>
+                    <div class="plazo-footer">
+                        <span class="plazo-monto" id="montoMensual">$ 0</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ===== SECCIÓN: CLIENTES ===== -->
+        <section id="seccion-clientes" class="seccion">
+            <!-- Formulario Agregar/Editar Cliente -->
+            <div class="card">
+                <div class="card-header">
+                    <h3><i class="fas fa-user-plus"></i> <span id="formTitulo">Nuevo Cliente</span></h3>
+                    <button onclick="cancelarEdicion()" class="btn-secundario" id="btnCancelar" style="display:none;">
+                        <i class="fas fa-times"></i> Cancelar
+                    </button>
+                </div>
+                <form id="formCliente" class="form-moderno">
+                    <input type="hidden" id="clienteId" value="">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label><i class="fas fa-user"></i> Nombre completo</label>
+                            <input type="text" id="nombre" placeholder="Ej: Omar Pérez" required>
+                        </div>
+                        <div class="form-group">
+                            <label><i class="fas fa-phone"></i> Teléfono</label>
+                            <input type="text" id="telefono" placeholder="Ej: 3111234567">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label><i class="fas fa-dollar-sign"></i> Monto (COP)</label>
+                            <input type="number" id="monto" placeholder="Ej: 3800000" required min="1" step="1">
+                        </div>
+                        <div class="form-group">
+                            <label><i class="fas fa-calendar"></i> Fecha inicio</label>
+                            <input type="date" id="fechaInicio" required>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label><i class="fas fa-clock"></i> Tipo de plazo</label>
+                            <select id="tipoPlazo" required>
+                                <option value="sin_definir">Sin definir</option>
+                                <option value="diario">Diario (días)</option>
+                                <option value="semanal">Semanal (semanas)</option>
+                                <option value="quincenal">Quincenal (quincenas)</option>
+                                <option value="mensual" selected>Mensual (meses)</option>
+                                <option value="personalizado">Personalizado</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label><i class="fas fa-hashtag"></i> Cantidad</label>
+                            <input type="number" id="plazo" placeholder="Ej: 6" min="0">
+                        </div>
+                    </div>
+                    <!-- Campos para fechas personalizadas -->
+                    <div class="form-row" id="campoDiasPago" style="display:none;">
+                        <div class="form-group">
+                            <label><i class="fas fa-calendar-day"></i> Días de pago</label>
+                            <input type="text" id="diasPago" placeholder="Ej: 16,31 o 05,20">
+                            <span style="font-size:11px;color:var(--gray-400);">Separados por coma (Ej: 16,31)</span>
+                        </div>
+                        <div class="form-group">
+                            <label><i class="fas fa-calendar-day"></i> Día fijo</label>
+                            <input type="number" id="diaFijo" placeholder="Ej: 28" min="1" max="31">
+                            <span style="font-size:11px;color:var(--gray-400);">Para pagos mensuales fijos</span>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn-primario" id="btnSubmit">
+                        <i class="fas fa-plus-circle"></i> Agregar Cliente
+                    </button>
+                </form>
+            </div>
+
+            <!-- Lista de Clientes -->
+            <div class="card">
+                <div class="card-header">
+                    <h3><i class="fas fa-list"></i> Lista de Clientes</h3>
+                    <div class="card-actions">
+                        <button onclick="exportarCSV()" class="btn-secundario">
+                            <i class="fas fa-file-csv"></i> Exportar CSV
+                        </button>
+                        <button onclick="generarCuotasPendientes()" class="btn-secundario">
+                            <i class="fas fa-sync"></i> Regenerar Cuotas
+                        </button>
+                    </div>
+                </div>
+                <div class="filtros-plazo">
+                    <button class="filtro-plazo-btn active" data-plazo="todos" onclick="filtrarClientesPorPlazo('todos')">
+                        <i class="fas fa-list"></i> Todos
+                    </button>
+                    <button class="filtro-plazo-btn" data-plazo="sin_definir" onclick="filtrarClientesPorPlazo('sin_definir')">
+                        <i class="fas fa-question-circle"></i> Sin definir
+                    </button>
+                    <button class="filtro-plazo-btn" data-plazo="diario" onclick="filtrarClientesPorPlazo('diario')">
+                        <i class="fas fa-calendar-day"></i> Diario
+                    </button>
+                    <button class="filtro-plazo-btn" data-plazo="semanal" onclick="filtrarClientesPorPlazo('semanal')">
+                        <i class="fas fa-calendar-week"></i> Semanal
+                    </button>
+                    <button class="filtro-plazo-btn" data-plazo="quincenal" onclick="filtrarClientesPorPlazo('quincenal')">
+                        <i class="fas fa-calendar-alt"></i> Quincenal
+                    </button>
+                    <button class="filtro-plazo-btn" data-plazo="mensual" onclick="filtrarClientesPorPlazo('mensual')">
+                        <i class="fas fa-calendar-alt"></i> Mensual
+                    </button>
+                    <button class="filtro-plazo-btn" data-plazo="personalizado" onclick="filtrarClientesPorPlazo('personalizado')">
+                        <i class="fas fa-cog"></i> Personalizado
+                    </button>
+                </div>
+                <div id="listaClientes" class="tabla-container">
+                    <p class="texto-centrado">Cargando clientes...</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- ===== SECCIÓN: CALENDARIO ===== -->
+        <section id="seccion-cuotas" class="seccion">
+            <div class="card">
+                <div class="card-header">
+                    <h3><i class="fas fa-calendar-alt"></i> Calendario de Cuotas</h3>
+                    <div class="card-actions">
+                        <button onclick="generarCuotasPendientes()" class="btn-secundario">
+                            <i class="fas fa-sync"></i> Regenerar
+                        </button>
+                        <button onclick="verificarAtrasos()" class="btn-secundario">
+                            <i class="fas fa-search"></i> Verificar
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="filtros-avanzados">
+                    <div class="filtro-group">
+                        <label><i class="fas fa-calendar"></i> Período</label>
+                        <div class="periodo-buttons">
+                            <button class="periodo-btn active" data-periodo="diario" onclick="filtrarCalendario('diario')">
+                                <i class="fas fa-calendar-day"></i> Diario
+                            </button>
+                            <button class="periodo-btn" data-periodo="semanal" onclick="filtrarCalendario('semanal')">
+                                <i class="fas fa-calendar-week"></i> Semanal
+                            </button>
+                            <button class="periodo-btn" data-periodo="quincenal" onclick="filtrarCalendario('quincenal')">
+                                <i class="fas fa-calendar-alt"></i> Quincenal
+                            </button>
+                            <button class="periodo-btn" data-periodo="mensual" onclick="filtrarCalendario('mensual')">
+                                <i class="fas fa-calendar-alt"></i> Mensual
+                            </button>
+                            <button class="periodo-btn" data-periodo="todos" onclick="filtrarCalendario('todos')">
+                                <i class="fas fa-list"></i> Todos
+                            </button>
+                        </div>
+                    </div>
+                    <div class="filtro-group">
+                        <label><i class="fas fa-user"></i> Cliente</label>
+                        <select id="filtroCliente" onchange="renderizarCalendario()">
+                            <option value="todos">Todos</option>
+                        </select>
+                    </div>
+                    <div class="filtro-group">
+                        <label><i class="fas fa-filter"></i> Estado</label>
+                        <select id="filtroEstado" onchange="renderizarCalendario()">
+                            <option value="todos">Todos</option>
+                            <option value="pendiente">⏳ Pendiente</option>
+                            <option value="pagada">✅ Pagada</option>
+                            <option value="atrasada">⚠️ Atrasada</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div id="calendarioCuotas" class="calendario-grid">
+                    <p class="texto-centrado">Cargando cuotas...</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- ===== SECCIÓN: REPORTES ===== -->
+        <section id="seccion-reportes" class="seccion">
+            <div class="card">
+                <div class="card-header">
+                    <h3><i class="fas fa-file-pdf"></i> Generar Reportes</h3>
+                </div>
+                <div class="reportes-grid">
+                    <div class="reporte-card" onclick="generarReporteGeneral()">
+                        <div class="reporte-icon" style="background: #e3f2fd;">
+                            <i class="fas fa-file-alt" style="color: #1a237e;"></i>
+                        </div>
+                        <h4>Reporte General</h4>
+                        <p>Resumen completo de todos los clientes y cuotas</p>
+                        <button class="btn-primario">
+                            <i class="fas fa-file-pdf"></i> Generar PDF
+                        </button>
+                    </div>
+                    <div class="reporte-card" onclick="generarReporteClientes()">
+                        <div class="reporte-icon" style="background: #e8f5e9;">
+                            <i class="fas fa-users" style="color: #2e7d32;"></i>
+                        </div>
+                        <h4>Reporte de Clientes</h4>
+                        <p>Listado detallado de clientes con saldos</p>
+                        <button class="btn-primario">
+                            <i class="fas fa-file-pdf"></i> Generar PDF
+                        </button>
+                    </div>
+                    <div class="reporte-card" onclick="generarReporteCuotas()">
+                        <div class="reporte-icon" style="background: #fff3e0;">
+                            <i class="fas fa-calendar-check" style="color: #e65100;"></i>
+                        </div>
+                        <h4>Reporte de Cuotas</h4>
+                        <p>Estado detallado de todas las cuotas</p>
+                        <button class="btn-primario">
+                            <i class="fas fa-file-pdf"></i> Generar PDF
+                        </button>
+                    </div>
+                    <div class="reporte-card" onclick="generarReporteAtrasos()">
+                        <div class="reporte-icon" style="background: #ffebee;">
+                            <i class="fas fa-exclamation-triangle" style="color: #c62828;"></i>
+                        </div>
+                        <h4>Reporte de Atrasos</h4>
+                        <p>Clientes con cuotas vencidas</p>
+                        <button class="btn-primario">
+                            <i class="fas fa-file-pdf"></i> Generar PDF
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- NOTIFICACIONES -->
+    <div id="notificaciones"></div>
+
+    <!-- Chart.js para gráficos -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
