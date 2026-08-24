@@ -1,6 +1,6 @@
 // ==========================================
 // PRESTACONTROL - SISTEMA COMPLETO
-// VERSIÓN CORREGIDA - CON VERIFICACIONES
+// VERSIÓN DEFINITIVA - CREA ELEMENTOS FALTANTES
 // ==========================================
 
 // ===== CONFIGURACIÓN =====
@@ -9,6 +9,7 @@ let cuotas = [];
 let historialPagos = [];
 let filtroPlazoActual = 'todos';
 let filtroPeriodoActual = 'diario';
+let clienteEditando = null;
 
 // ==========================================
 // FORMATO PESOS COLOMBIANOS (COP)
@@ -30,6 +31,33 @@ function formatoCOPCorto(valor) {
     const numero = Math.round(valor);
     const conPuntos = numero.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
     return `$${conPuntos}`;
+}
+
+// ==========================================
+// FUNCIÓN PARA OBTENER O CREAR ELEMENTO
+// ==========================================
+
+function getOrCreateElement(id, type = 'input', attributes = {}) {
+    let el = document.getElementById(id);
+    if (!el) {
+        console.warn(`⚠️ Elemento #${id} no encontrado, creando...`);
+        el = document.createElement(type);
+        el.id = id;
+        if (type === 'input') {
+            el.type = attributes.type || 'text';
+        }
+        if (attributes.placeholder) el.placeholder = attributes.placeholder;
+        if (attributes.className) el.className = attributes.className;
+        if (attributes.style) el.style.cssText = attributes.style;
+        // Agregar al formulario o al body
+        const form = document.getElementById('formCliente');
+        if (form) {
+            form.appendChild(el);
+        } else {
+            document.body.appendChild(el);
+        }
+    }
+    return el;
 }
 
 // ==========================================
@@ -57,9 +85,11 @@ function getClientesIniciales() {
 
 // ===== INICIALIZACIÓN =====
 document.addEventListener('DOMContentLoaded', function() {
+    // CREAR ELEMENTOS FALTANTES ANTES DE CARGAR DATOS
+    asegurarElementos();
+    
     cargarDatosLocales();
     
-    // Verificar que los elementos existan antes de usarlos
     const fechaInicio = document.getElementById('fechaInicio');
     if (fechaInicio) {
         fechaInicio.value = new Date().toISOString().split('T')[0];
@@ -94,6 +124,39 @@ document.addEventListener('DOMContentLoaded', function() {
     renderizarTodo();
     setTimeout(verificarAtrasos, 1500);
 });
+
+// ==========================================
+// ASEGURAR QUE TODOS LOS ELEMENTOS EXISTAN
+// ==========================================
+
+function asegurarElementos() {
+    // Crear campo oculto clienteId si no existe
+    if (!document.getElementById('clienteId')) {
+        const input = document.createElement('input');
+        input.type = 'hidden';
+        input.id = 'clienteId';
+        input.value = '';
+        const form = document.getElementById('formCliente');
+        if (form) {
+            form.appendChild(input);
+        } else {
+            document.body.appendChild(input);
+        }
+        console.log('✅ Creado campo #clienteId');
+    }
+    
+    // Verificar otros elementos importantes
+    const elementosNecesarios = [
+        'nombre', 'telefono', 'email', 'monto', 'fechaInicio', 
+        'tipoPlazo', 'plazo', 'diasPago', 'diaFijo'
+    ];
+    
+    elementosNecesarios.forEach(id => {
+        if (!document.getElementById(id)) {
+            console.warn(`⚠️ Elemento #${id} no existe en el DOM`);
+        }
+    });
+}
 
 // ===== CARGA DE DATOS =====
 function cargarDatosLocales() {
@@ -155,164 +218,179 @@ function guardarHistorial() {
 }
 
 // ==========================================
-// FUNCIÓN PARA OBTENER ELEMENTO SEGURO
-// ==========================================
-
-function getElement(id) {
-    const el = document.getElementById(id);
-    if (!el) {
-        console.warn(`⚠️ Elemento no encontrado: #${id}`);
-    }
-    return el;
-}
-
-// ==========================================
-// EDITAR CLIENTE - CORREGIDO
+// EDITAR CLIENTE - VERSIÓN DEFINITIVA
 // ==========================================
 
 function editarCliente(id) {
     console.log('🔍 Editando cliente ID:', id);
     
-    // Buscar el cliente
     const cliente = clientes.find(c => c.id === id);
     if (!cliente) {
         mostrarNotificacion('Cliente no encontrado', 'error');
-        console.error('❌ Cliente no encontrado:', id);
         return;
     }
     
     console.log('✅ Datos del cliente:', cliente);
     
-    // Verificar que todos los elementos existan
-    const elementos = {
-        clienteId: getElement('clienteId'),
-        nombre: getElement('nombre'),
-        telefono: getElement('telefono'),
-        email: getElement('email'),
-        monto: getElement('monto'),
-        fechaInicio: getElement('fechaInicio'),
-        tipoPlazo: getElement('tipoPlazo'),
-        plazo: getElement('plazo'),
-        diasPago: getElement('diasPago'),
-        diaFijo: getElement('diaFijo'),
-        campoDiasPago: getElement('campoDiasPago'),
-        formTitulo: getElement('formTitulo'),
-        btnSubmit: getElement('btnSubmit'),
-        btnCancelar: getElement('btnCancelar')
+    // OBTENER O CREAR EL CAMPO clienteId
+    let clienteIdField = document.getElementById('clienteId');
+    if (!clienteIdField) {
+        clienteIdField = document.createElement('input');
+        clienteIdField.type = 'hidden';
+        clienteIdField.id = 'clienteId';
+        const form = document.getElementById('formCliente');
+        if (form) {
+            form.appendChild(clienteIdField);
+        } else {
+            document.body.appendChild(clienteIdField);
+        }
+        console.log('✅ Creado campo #clienteId dinámicamente');
+    }
+    
+    // OBTENER TODOS LOS CAMPOS DEL FORMULARIO
+    const campos = {
+        clienteId: clienteIdField,
+        nombre: document.getElementById('nombre'),
+        telefono: document.getElementById('telefono'),
+        email: document.getElementById('email'),
+        monto: document.getElementById('monto'),
+        fechaInicio: document.getElementById('fechaInicio'),
+        tipoPlazo: document.getElementById('tipoPlazo'),
+        plazo: document.getElementById('plazo'),
+        diasPago: document.getElementById('diasPago'),
+        diaFijo: document.getElementById('diaFijo'),
+        campoDiasPago: document.getElementById('campoDiasPago'),
+        formTitulo: document.getElementById('formTitulo'),
+        btnSubmit: document.getElementById('btnSubmit'),
+        btnCancelar: document.getElementById('btnCancelar')
     };
     
-    // Verificar que todos los elementos existan
-    for (const [key, el] of Object.entries(elementos)) {
-        if (!el) {
-            console.error(`❌ Elemento #${key} no encontrado en el DOM`);
-            mostrarNotificacion(`Error: elemento ${key} no encontrado`, 'error');
-            return;
+    // Verificar que los campos esenciales existan
+    if (!campos.nombre || !campos.monto || !campos.fechaInicio) {
+        mostrarNotificacion('Error: Formulario incompleto', 'error');
+        console.error('❌ Campos faltantes:', {
+            nombre: !!campos.nombre,
+            monto: !!campos.monto,
+            fechaInicio: !!campos.fechaInicio
+        });
+        return;
+    }
+    
+    // LLENAR EL FORMULARIO
+    try {
+        campos.clienteId.value = cliente.id;
+        campos.nombre.value = cliente.nombre;
+        if (campos.telefono) campos.telefono.value = cliente.telefono !== '—' ? cliente.telefono : '';
+        if (campos.email) campos.email.value = cliente.email !== '—' ? cliente.email : '';
+        campos.monto.value = cliente.monto;
+        campos.fechaInicio.value = cliente.fechaInicio;
+        if (campos.tipoPlazo) campos.tipoPlazo.value = cliente.tipoPlazo;
+        if (campos.plazo) campos.plazo.value = cliente.plazo || '';
+        if (campos.diasPago) campos.diasPago.value = cliente.diasPago || '';
+        if (campos.diaFijo) campos.diaFijo.value = cliente.diaFijo || '';
+        
+        // Mostrar campos personalizados
+        if (campos.campoDiasPago) {
+            if (cliente.tipoPlazo === 'personalizado' || cliente.tipoPlazo === 'quincenal') {
+                campos.campoDiasPago.style.display = 'grid';
+            } else {
+                campos.campoDiasPago.style.display = 'none';
+            }
         }
+        
+        // Cambiar UI del formulario
+        if (campos.formTitulo) campos.formTitulo.textContent = 'Editar Cliente';
+        if (campos.btnSubmit) {
+            campos.btnSubmit.innerHTML = '<i class="fas fa-save"></i> Actualizar Cliente';
+        }
+        if (campos.btnCancelar) campos.btnCancelar.style.display = 'inline-block';
+        
+        // Guardar referencia del cliente en edición
+        clienteEditando = id;
+        
+        // Scroll al formulario
+        const seccionClientes = document.getElementById('seccion-clientes');
+        if (seccionClientes) {
+            seccionClientes.scrollIntoView({ behavior: 'smooth' });
+        }
+        
+        mostrarNotificacion(`✏️ Editando: ${cliente.nombre}`, 'warning');
+        
+    } catch (error) {
+        console.error('❌ Error al llenar formulario:', error);
+        mostrarNotificacion('Error al cargar datos del cliente', 'error');
     }
-    
-    // Llenar el formulario con los datos del cliente
-    elementos.clienteId.value = cliente.id;
-    elementos.nombre.value = cliente.nombre;
-    elementos.telefono.value = cliente.telefono !== '—' ? cliente.telefono : '';
-    elementos.email.value = cliente.email !== '—' ? cliente.email : '';
-    elementos.monto.value = cliente.monto;
-    elementos.fechaInicio.value = cliente.fechaInicio;
-    elementos.tipoPlazo.value = cliente.tipoPlazo;
-    elementos.plazo.value = cliente.plazo || '';
-    elementos.diasPago.value = cliente.diasPago || '';
-    elementos.diaFijo.value = cliente.diaFijo || '';
-    
-    // Mostrar campos personalizados si es necesario
-    if (cliente.tipoPlazo === 'personalizado' || cliente.tipoPlazo === 'quincenal') {
-        elementos.campoDiasPago.style.display = 'grid';
-    } else {
-        elementos.campoDiasPago.style.display = 'none';
-    }
-    
-    // Cambiar el título y botones del formulario
-    elementos.formTitulo.textContent = 'Editar Cliente';
-    elementos.btnSubmit.innerHTML = '<i class="fas fa-save"></i> Actualizar Cliente';
-    elementos.btnCancelar.style.display = 'inline-block';
-    
-    // Hacer scroll al formulario
-    const seccionClientes = getElement('seccion-clientes');
-    if (seccionClientes) {
-        seccionClientes.scrollIntoView({ behavior: 'smooth' });
-    }
-    
-    mostrarNotificacion(`✏️ Editando cliente: ${cliente.nombre}`, 'warning');
 }
 
 // ==========================================
-// CANCELAR EDICIÓN - CORREGIDO
+// CANCELAR EDICIÓN
 // ==========================================
 
 function cancelarEdicion() {
     console.log('❌ Cancelando edición');
+    clienteEditando = null;
     
-    const elementos = {
-        clienteId: getElement('clienteId'),
-        formCliente: getElement('formCliente'),
-        fechaInicio: getElement('fechaInicio'),
-        campoDiasPago: getElement('campoDiasPago'),
-        formTitulo: getElement('formTitulo'),
-        btnSubmit: getElement('btnSubmit'),
-        btnCancelar: getElement('btnCancelar')
+    const campos = {
+        clienteId: document.getElementById('clienteId'),
+        formCliente: document.getElementById('formCliente'),
+        fechaInicio: document.getElementById('fechaInicio'),
+        campoDiasPago: document.getElementById('campoDiasPago'),
+        formTitulo: document.getElementById('formTitulo'),
+        btnSubmit: document.getElementById('btnSubmit'),
+        btnCancelar: document.getElementById('btnCancelar')
     };
     
-    if (elementos.clienteId) elementos.clienteId.value = '';
-    if (elementos.formCliente) elementos.formCliente.reset();
-    if (elementos.fechaInicio) {
-        elementos.fechaInicio.value = new Date().toISOString().split('T')[0];
+    if (campos.clienteId) campos.clienteId.value = '';
+    if (campos.formCliente) campos.formCliente.reset();
+    if (campos.fechaInicio) {
+        campos.fechaInicio.value = new Date().toISOString().split('T')[0];
     }
-    if (elementos.campoDiasPago) elementos.campoDiasPago.style.display = 'none';
-    if (elementos.formTitulo) elementos.formTitulo.textContent = 'Nuevo Cliente';
-    if (elementos.btnSubmit) {
-        elementos.btnSubmit.innerHTML = '<i class="fas fa-plus-circle"></i> Agregar Cliente';
+    if (campos.campoDiasPago) campos.campoDiasPago.style.display = 'none';
+    if (campos.formTitulo) campos.formTitulo.textContent = 'Nuevo Cliente';
+    if (campos.btnSubmit) {
+        campos.btnSubmit.innerHTML = '<i class="fas fa-plus-circle"></i> Agregar Cliente';
     }
-    if (elementos.btnCancelar) elementos.btnCancelar.style.display = 'none';
+    if (campos.btnCancelar) campos.btnCancelar.style.display = 'none';
 }
 
 // ==========================================
-// GUARDAR CLIENTE - CORREGIDO
+// GUARDAR CLIENTE
 // ==========================================
 
 function guardarCliente(event) {
     event.preventDefault();
     
-    const elementos = {
-        clienteId: getElement('clienteId'),
-        nombre: getElement('nombre'),
-        telefono: getElement('telefono'),
-        email: getElement('email'),
-        monto: getElement('monto'),
-        fechaInicio: getElement('fechaInicio'),
-        tipoPlazo: getElement('tipoPlazo'),
-        plazo: getElement('plazo'),
-        diasPago: getElement('diasPago'),
-        diaFijo: getElement('diaFijo'),
-        formCliente: getElement('formCliente'),
-        campoDiasPago: getElement('campoDiasPago')
-    };
+    const clienteIdField = document.getElementById('clienteId');
+    const id = clienteIdField ? clienteIdField.value : '';
     
-    // Verificar elementos esenciales
-    if (!elementos.nombre || !elementos.monto || !elementos.fechaInicio) {
-        mostrarNotificacion('Error: elementos del formulario no encontrados', 'error');
+    const nombre = document.getElementById('nombre');
+    const telefono = document.getElementById('telefono');
+    const email = document.getElementById('email');
+    const monto = document.getElementById('monto');
+    const fechaInicio = document.getElementById('fechaInicio');
+    const tipoPlazo = document.getElementById('tipoPlazo');
+    const plazo = document.getElementById('plazo');
+    const diasPago = document.getElementById('diasPago');
+    const diaFijo = document.getElementById('diaFijo');
+    const formCliente = document.getElementById('formCliente');
+    const campoDiasPago = document.getElementById('campoDiasPago');
+    
+    if (!nombre || !monto || !fechaInicio) {
+        mostrarNotificacion('Completa todos los campos obligatorios', 'error');
         return;
     }
     
-    const id = elementos.clienteId ? elementos.clienteId.value : '';
-    const nombre = elementos.nombre.value.trim();
-    const telefono = elementos.telefono ? elementos.telefono.value.trim() : '';
-    const email = elementos.email ? elementos.email.value.trim() : '';
-    const monto = parseFloat(elementos.monto.value);
-    const fechaInicio = elementos.fechaInicio.value;
-    const tipoPlazo = elementos.tipoPlazo ? elementos.tipoPlazo.value : 'sin_definir';
-    const plazo = parseInt(elementos.plazo ? elementos.plazo.value : '0') || 0;
-    const diasPago = elementos.diasPago ? elementos.diasPago.value.trim() : '';
-    const diaFijo = elementos.diaFijo ? elementos.diaFijo.value.trim() : '';
+    const nombreVal = nombre.value.trim();
+    const telefonoVal = telefono ? telefono.value.trim() : '';
+    const emailVal = email ? email.value.trim() : '';
+    const montoVal = parseFloat(monto.value);
+    const fechaInicioVal = fechaInicio.value;
+    const tipoPlazoVal = tipoPlazo ? tipoPlazo.value : 'sin_definir';
+    const plazoVal = parseInt(plazo ? plazo.value : '0') || 0;
+    const diasPagoVal = diasPago ? diasPago.value.trim() : '';
+    const diaFijoVal = diaFijo ? diaFijo.value.trim() : '';
     
-    if (!nombre || !monto || !fechaInicio) {
+    if (!nombreVal || !montoVal || !fechaInicioVal) {
         mostrarNotificacion('Completa todos los campos obligatorios', 'error');
         return;
     }
@@ -327,64 +405,64 @@ function guardarCliente(event) {
         
         const montoAnterior = clienteExistente.monto;
         
-        clienteExistente.nombre = nombre;
-        clienteExistente.telefono = telefono || '—';
-        clienteExistente.email = email || '—';
-        clienteExistente.monto = monto;
-        clienteExistente.fechaInicio = fechaInicio;
-        clienteExistente.tipoPlazo = tipoPlazo;
-        clienteExistente.plazo = plazo;
-        clienteExistente.diasPago = diasPago || '';
-        clienteExistente.diaFijo = diaFijo || '';
+        clienteExistente.nombre = nombreVal;
+        clienteExistente.telefono = telefonoVal || '—';
+        clienteExistente.email = emailVal || '—';
+        clienteExistente.monto = montoVal;
+        clienteExistente.fechaInicio = fechaInicioVal;
+        clienteExistente.tipoPlazo = tipoPlazoVal;
+        clienteExistente.plazo = plazoVal;
+        clienteExistente.diasPago = diasPagoVal || '';
+        clienteExistente.diaFijo = diaFijoVal || '';
         
-        if (montoAnterior !== monto) {
+        if (montoAnterior !== montoVal) {
             const cuotasPagadas = cuotas.filter(c => c.clienteId === clienteExistente.id && c.estado === 'pagada');
             const totalPagado = cuotasPagadas.reduce((sum, c) => sum + c.monto, 0);
-            clienteExistente.saldo = monto - totalPagado;
+            clienteExistente.saldo = montoVal - totalPagado;
         }
         
         guardarClientes();
         
         cuotas = cuotas.filter(c => c.clienteId !== clienteExistente.id);
-        if (tipoPlazo !== 'sin_definir' && plazo > 0) {
+        if (tipoPlazoVal !== 'sin_definir' && plazoVal > 0) {
             generarCuotasCliente(clienteExistente);
         }
         guardarCuotas();
         
-        mostrarNotificacion(`✅ Cliente "${nombre}" actualizado correctamente`, 'success');
+        mostrarNotificacion(`✅ Cliente "${nombreVal}" actualizado correctamente`, 'success');
         cancelarEdicion();
         
     } else {
         // NUEVO CLIENTE
         const nuevoCliente = {
             id: Date.now(),
-            nombre,
-            telefono: telefono || '—',
-            email: email || '—',
-            monto,
-            fechaInicio,
-            tipoPlazo,
-            plazo,
-            saldo: monto,
-            diasPago: diasPago || '',
-            diaFijo: diaFijo || ''
+            nombre: nombreVal,
+            telefono: telefonoVal || '—',
+            email: emailVal || '—',
+            monto: montoVal,
+            fechaInicio: fechaInicioVal,
+            tipoPlazo: tipoPlazoVal,
+            plazo: plazoVal,
+            saldo: montoVal,
+            diasPago: diasPagoVal || '',
+            diaFijo: diaFijoVal || ''
         };
         
         clientes.push(nuevoCliente);
         guardarClientes();
         
-        if (tipoPlazo !== 'sin_definir' && plazo > 0) {
+        if (tipoPlazoVal !== 'sin_definir' && plazoVal > 0) {
             generarCuotasCliente(nuevoCliente);
             guardarCuotas();
         }
         
-        if (elementos.formCliente) elementos.formCliente.reset();
-        if (elementos.fechaInicio) {
-            elementos.fechaInicio.value = new Date().toISOString().split('T')[0];
+        if (formCliente) formCliente.reset();
+        if (fechaInicio) {
+            fechaInicio.value = new Date().toISOString().split('T')[0];
         }
-        if (elementos.campoDiasPago) elementos.campoDiasPago.style.display = 'none';
+        if (campoDiasPago) campoDiasPago.style.display = 'none';
         
-        mostrarNotificacion(`✅ Cliente "${nombre}" agregado con ${formatoCOP(monto)}`, 'success');
+        mostrarNotificacion(`✅ Cliente "${nombreVal}" agregado con ${formatoCOP(montoVal)}`, 'success');
     }
     
     renderizarTodo();
