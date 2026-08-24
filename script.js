@@ -1,6 +1,7 @@
 // ==========================================
 // PRESTACONTROL - SISTEMA COMPLETO
 // VERSIÓN CON CIERRE AUTOMÁTICO DEL MENÚ
+// Y EDICIÓN DE CLIENTES FUNCIONANDO
 // ==========================================
 
 // ===== CONFIGURACIÓN =====
@@ -9,7 +10,6 @@ let cuotas = [];
 let historialPagos = [];
 let filtroPlazoActual = 'todos';
 let filtroPeriodoActual = 'diario';
-let clienteEditando = null;
 
 // ==========================================
 // FORMATO PESOS COLOMBIANOS (COP)
@@ -354,7 +354,7 @@ function generarCuotasCliente(cliente) {
     }
 }
 
-// ===== GUARDAR CLIENTE =====
+// ===== GUARDAR CLIENTE (NUEVO O EDICIÓN) =====
 function guardarCliente(event) {
     event.preventDefault();
     
@@ -375,37 +375,44 @@ function guardarCliente(event) {
     }
     
     if (id) {
+        // EDITAR CLIENTE EXISTENTE
         const clienteExistente = clientes.find(c => c.id === parseInt(id));
-        if (clienteExistente) {
-            const montoAnterior = clienteExistente.monto;
-            
-            clienteExistente.nombre = nombre;
-            clienteExistente.telefono = telefono || '—';
-            clienteExistente.email = email || '—';
-            clienteExistente.monto = monto;
-            clienteExistente.fechaInicio = fechaInicio;
-            clienteExistente.tipoPlazo = tipoPlazo;
-            clienteExistente.plazo = plazo;
-            clienteExistente.diasPago = diasPago || '';
-            clienteExistente.diaFijo = diaFijo || '';
-            
-            if (montoAnterior !== monto) {
-                const cuotasPagadas = cuotas.filter(c => c.clienteId === clienteExistente.id && c.estado === 'pagada');
-                const totalPagado = cuotasPagadas.reduce((sum, c) => sum + c.monto, 0);
-                clienteExistente.saldo = monto - totalPagado;
-            }
-            
-            guardarClientes();
-            cuotas = cuotas.filter(c => c.clienteId !== clienteExistente.id);
-            if (tipoPlazo !== 'sin_definir' && plazo > 0) {
-                generarCuotasCliente(clienteExistente);
-            }
-            guardarCuotas();
-            
-            mostrarNotificacion(`Cliente "${nombre}" actualizado correctamente`, 'success');
-            cancelarEdicion();
+        if (!clienteExistente) {
+            mostrarNotificacion('Cliente no encontrado', 'error');
+            return;
         }
+        
+        const montoAnterior = clienteExistente.monto;
+        
+        clienteExistente.nombre = nombre;
+        clienteExistente.telefono = telefono || '—';
+        clienteExistente.email = email || '—';
+        clienteExistente.monto = monto;
+        clienteExistente.fechaInicio = fechaInicio;
+        clienteExistente.tipoPlazo = tipoPlazo;
+        clienteExistente.plazo = plazo;
+        clienteExistente.diasPago = diasPago || '';
+        clienteExistente.diaFijo = diaFijo || '';
+        
+        if (montoAnterior !== monto) {
+            const cuotasPagadas = cuotas.filter(c => c.clienteId === clienteExistente.id && c.estado === 'pagada');
+            const totalPagado = cuotasPagadas.reduce((sum, c) => sum + c.monto, 0);
+            clienteExistente.saldo = monto - totalPagado;
+        }
+        
+        guardarClientes();
+        
+        cuotas = cuotas.filter(c => c.clienteId !== clienteExistente.id);
+        if (tipoPlazo !== 'sin_definir' && plazo > 0) {
+            generarCuotasCliente(clienteExistente);
+        }
+        guardarCuotas();
+        
+        mostrarNotificacion(`Cliente "${nombre}" actualizado correctamente`, 'success');
+        cancelarEdicion();
+        
     } else {
+        // NUEVO CLIENTE
         const nuevoCliente = {
             id: Date.now(),
             nombre,
@@ -441,9 +448,11 @@ function guardarCliente(event) {
 // ===== EDITAR CLIENTE =====
 function editarCliente(id) {
     const cliente = clientes.find(c => c.id === id);
-    if (!cliente) return;
+    if (!cliente) {
+        mostrarNotificacion('Cliente no encontrado', 'error');
+        return;
+    }
     
-    clienteEditando = id;
     document.getElementById('clienteId').value = cliente.id;
     document.getElementById('nombre').value = cliente.nombre;
     document.getElementById('telefono').value = cliente.telefono !== '—' ? cliente.telefono : '';
@@ -470,7 +479,6 @@ function editarCliente(id) {
 
 // ===== CANCELAR EDICIÓN =====
 function cancelarEdicion() {
-    clienteEditando = null;
     document.getElementById('clienteId').value = '';
     document.getElementById('formCliente').reset();
     document.getElementById('fechaInicio').value = new Date().toISOString().split('T')[0];
