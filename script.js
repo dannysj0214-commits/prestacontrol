@@ -1,6 +1,6 @@
 // ==========================================
 // PRESTACONTROL - SISTEMA COMPLETO
-// CON REPORTE DE CUOTAS EN DASHBOARD
+// VERSIÓN CON CIERRE AUTOMÁTICO DEL MENÚ
 // ==========================================
 
 // ===== CONFIGURACIÓN =====
@@ -111,7 +111,7 @@ function cargarDatosLocales() {
             guardarHistorial();
         }
     } catch (error) {
-        console.error('❌ Error cargando datos:', error);
+        console.error('Error cargando datos:', error);
         clientes = getClientesIniciales();
         cuotas = [];
         historialPagos = [];
@@ -137,15 +137,14 @@ function guardarHistorial() {
     localStorage.setItem('historialPagos', JSON.stringify(historialPagos));
 }
 
-// ===== REPORTAR CUOTA (DESDE DASHBOARD O CALENDARIO) =====
+// ===== REPORTAR CUOTA =====
 function reportarCuota(clienteId, montoPagar) {
     const cliente = clientes.find(c => c.id === clienteId);
     if (!cliente) {
-        mostrarNotificacion('❌ Cliente no encontrado', 'error');
+        mostrarNotificacion('Cliente no encontrado', 'error');
         return;
     }
     
-    // Si no se especifica monto, usar el valor de la próxima cuota
     let monto = montoPagar;
     if (!monto || monto <= 0) {
         const cuotaPendiente = cuotas
@@ -155,18 +154,16 @@ function reportarCuota(clienteId, montoPagar) {
         if (cuotaPendiente) {
             monto = cuotaPendiente.monto;
         } else {
-            mostrarNotificacion(`❌ ${cliente.nombre} no tiene cuotas pendientes`, 'error');
+            mostrarNotificacion(`${cliente.nombre} no tiene cuotas pendientes`, 'error');
             return;
         }
     }
     
-    // Verificar que no supere el saldo
     if (monto > cliente.saldo) {
-        mostrarNotificacion(`❌ El monto (${formatoCOP(monto)}) supera el saldo (${formatoCOP(cliente.saldo)})`, 'error');
+        mostrarNotificacion(`El monto (${formatoCOP(monto)}) supera el saldo (${formatoCOP(cliente.saldo)})`, 'error');
         return;
     }
     
-    // Buscar la cuota correspondiente
     const cuota = cuotas.find(c => 
         c.clienteId === clienteId && 
         c.estado === 'pendiente' && 
@@ -174,7 +171,6 @@ function reportarCuota(clienteId, montoPagar) {
     );
     
     if (!cuota) {
-        // Si no encuentra cuota exacta, buscar la más cercana
         const cuotasPendientes = cuotas
             .filter(c => c.clienteId === clienteId && c.estado === 'pendiente')
             .sort((a, b) => a.fecha.localeCompare(b.fecha));
@@ -183,17 +179,15 @@ function reportarCuota(clienteId, montoPagar) {
             cuotasPendientes[0].estado = 'pagada';
             monto = cuotasPendientes[0].monto;
         } else {
-            mostrarNotificacion(`❌ ${cliente.nombre} no tiene cuotas pendientes`, 'error');
+            mostrarNotificacion(`${cliente.nombre} no tiene cuotas pendientes`, 'error');
             return;
         }
     } else {
         cuota.estado = 'pagada';
     }
     
-    // Descontar del saldo
     cliente.saldo = parseFloat((cliente.saldo - monto).toFixed(2));
     
-    // Registrar en historial
     const registro = {
         id: Date.now(),
         clienteId: cliente.id,
@@ -205,12 +199,10 @@ function reportarCuota(clienteId, montoPagar) {
     };
     historialPagos.push(registro);
     
-    // Guardar todo
     guardarClientes();
     guardarCuotas();
     guardarHistorial();
     
-    // Calcular cuántas cuotas restantes tiene
     const cuotasRestantes = cuotas.filter(c => 
         c.clienteId === cliente.id && c.estado !== 'pagada'
     ).length;
@@ -222,42 +214,41 @@ function reportarCuota(clienteId, montoPagar) {
     
     const porcentaje = ((monto / cliente.monto) * 100).toFixed(1);
     
-    // Notificación detallada
-    let mensaje = `💵 ${cliente.nombre} pagó ${formatoCOP(monto)}\n`;
-    mensaje += `📊 Saldo restante: ${formatoCOP(cliente.saldo)}\n`;
-    mensaje += `📋 Cuotas: ${cuotasPagadas}/${totalCuotas} pagadas (${cuotasRestantes} restantes)`;
+    let mensaje = `${cliente.nombre} pagó ${formatoCOP(monto)}\n`;
+    mensaje += `Saldo restante: ${formatoCOP(cliente.saldo)}\n`;
+    mensaje += `Cuotas: ${cuotasPagadas}/${totalCuotas} pagadas (${cuotasRestantes} restantes)`;
     
     mostrarNotificacion(mensaje, 'success');
     
     if (cliente.saldo <= 0) {
-        mostrarNotificacion(`🎉 ¡${cliente.nombre} ha saldado completamente su deuda!`, 'success');
+        mostrarNotificacion(`¡${cliente.nombre} ha saldado completamente su deuda!`, 'success');
     }
     
     renderizarTodo();
 }
 
-// ===== REPORTAR CUOTA CON MONTO PERSONALIZADO =====
+// ===== REPORTAR CUOTA PERSONALIZADA =====
 function reportarCuotaPersonalizada(clienteId) {
     const cliente = clientes.find(c => c.id === clienteId);
     if (!cliente) return;
     
     const montoInput = prompt(
-        `💰 ${cliente.nombre}\nSaldo actual: ${formatoCOP(cliente.saldo)}\n\nIngresa el monto a pagar:`,
+        `${cliente.nombre}\nSaldo actual: ${formatoCOP(cliente.saldo)}\n\nIngresa el monto a pagar:`,
         Math.min(100000, cliente.saldo)
     );
     
-    if (montoInput === null) return; // Cancelar
+    if (montoInput === null) return;
     
     const monto = parseFloat(montoInput.replace(/[^0-9.]/g, ''));
     if (isNaN(monto) || monto <= 0) {
-        mostrarNotificacion('❌ Monto inválido', 'error');
+        mostrarNotificacion('Monto inválido', 'error');
         return;
     }
     
     reportarCuota(clienteId, monto);
 }
 
-// ===== VER HISTORIAL DE PAGOS DE UN CLIENTE =====
+// ===== VER HISTORIAL =====
 function verHistorialCliente(clienteId) {
     const cliente = clientes.find(c => c.id === clienteId);
     if (!cliente) return;
@@ -265,20 +256,20 @@ function verHistorialCliente(clienteId) {
     const pagos = historialPagos.filter(h => h.clienteId === clienteId);
     
     if (pagos.length === 0) {
-        mostrarNotificacion(`📋 ${cliente.nombre} no tiene pagos registrados`, 'warning');
+        mostrarNotificacion(`${cliente.nombre} no tiene pagos registrados`, 'warning');
         return;
     }
     
-    let mensaje = `📋 HISTORIAL DE ${cliente.nombre.toUpperCase()}\n`;
-    mensaje += `━`.repeat(40) + '\n';
+    let mensaje = `HISTORIAL DE ${cliente.nombre.toUpperCase()}\n`;
+    mensaje += '━'.repeat(40) + '\n';
     
     pagos.forEach((p, i) => {
         mensaje += `${i+1}. ${formatoCOP(p.monto)} - ${p.fecha} ${p.hora}\n`;
         mensaje += `   Saldo: ${formatoCOP(p.saldoRestante)}\n`;
     });
     
-    mensaje += `━`.repeat(40) + '\n';
-    mensaje += `💰 Total pagado: ${formatoCOP(pagos.reduce((sum, p) => sum + p.monto, 0))}`;
+    mensaje += '━'.repeat(40) + '\n';
+    mensaje += `Total pagado: ${formatoCOP(pagos.reduce((sum, p) => sum + p.monto, 0))}`;
     
     mostrarNotificacion(mensaje, 'success');
 }
@@ -379,7 +370,7 @@ function guardarCliente(event) {
     const diaFijo = document.getElementById('diaFijo').value.trim();
     
     if (!nombre || !monto || !fechaInicio) {
-        mostrarNotificacion('❌ Completa todos los campos obligatorios', 'error');
+        mostrarNotificacion('Completa todos los campos obligatorios', 'error');
         return;
     }
     
@@ -411,7 +402,7 @@ function guardarCliente(event) {
             }
             guardarCuotas();
             
-            mostrarNotificacion(`✅ Cliente "${nombre}" actualizado correctamente`, 'success');
+            mostrarNotificacion(`Cliente "${nombre}" actualizado correctamente`, 'success');
             cancelarEdicion();
         }
     } else {
@@ -441,7 +432,7 @@ function guardarCliente(event) {
         document.getElementById('fechaInicio').value = new Date().toISOString().split('T')[0];
         document.getElementById('campoDiasPago').style.display = 'none';
         
-        mostrarNotificacion(`✅ Cliente "${nombre}" agregado con ${formatoCOP(monto)}`, 'success');
+        mostrarNotificacion(`Cliente "${nombre}" agregado con ${formatoCOP(monto)}`, 'success');
     }
     
     renderizarTodo();
@@ -504,7 +495,7 @@ function eliminarCliente(id) {
     guardarCuotas();
     guardarHistorial();
     renderizarTodo();
-    mostrarNotificacion(`🗑️ Cliente "${cliente.nombre}" eliminado`, 'success');
+    mostrarNotificacion(`Cliente "${cliente.nombre}" eliminado`, 'success');
 }
 
 // ===== VERIFICAR ATRASOS =====
@@ -521,7 +512,7 @@ function verificarAtrasos() {
     
     if (atrasados.length > 0) {
         guardarCuotas();
-        mostrarNotificacion(`🚨 ${atrasados.length} cliente(s) atrasado(s)`, 'error');
+        mostrarNotificacion(`${atrasados.length} cliente(s) atrasado(s)`, 'error');
         document.getElementById('badgeNotificaciones').textContent = atrasados.length;
         document.getElementById('navBadge').textContent = atrasados.length;
         renderizarTodo();
@@ -534,7 +525,7 @@ function verificarAtrasos() {
 // ===== GENERAR CUOTAS PENDIENTES =====
 function generarCuotasPendientes() {
     if (clientes.length === 0) {
-        mostrarNotificacion('❌ No hay clientes para generar cuotas', 'error');
+        mostrarNotificacion('No hay clientes para generar cuotas', 'error');
         return;
     }
     
@@ -548,7 +539,7 @@ function generarCuotasPendientes() {
     });
     guardarCuotas();
     renderizarTodo();
-    mostrarNotificacion('🔄 Cuotas regeneradas correctamente', 'success');
+    mostrarNotificacion('Cuotas regeneradas correctamente', 'success');
 }
 
 // ===== FILTRAR CLIENTES POR PLAZO =====
@@ -571,12 +562,12 @@ function filtrarCalendario(periodo) {
 
 // ===== SINCRONIZAR CON NETLIFY =====
 function sincronizarDatos() {
-    mostrarNotificacion('🔄 Sincronizando con Netlify Database...', 'warning');
+    mostrarNotificacion('Sincronizando con Netlify Database...', 'warning');
     setTimeout(() => {
         try {
-            mostrarNotificacion('✅ Datos sincronizados correctamente', 'success');
+            mostrarNotificacion('Datos sincronizados correctamente', 'success');
         } catch (error) {
-            mostrarNotificacion('❌ Error al sincronizar: ' + error.message, 'error');
+            mostrarNotificacion('Error al sincronizar: ' + error.message, 'error');
         }
     }, 1500);
 }
@@ -633,11 +624,6 @@ function renderizarClientes() {
         const progreso = total > 0 ? Math.round((pagadas / total) * 100) : 0;
         const porcentajeSaldo = cliente.monto > 0 ? Math.round((cliente.saldo / cliente.monto) * 100) : 0;
         
-        const emojiPlazo = cliente.tipoPlazo === 'diario' ? '📅' : 
-                          cliente.tipoPlazo === 'semanal' ? '📆' :
-                          cliente.tipoPlazo === 'quincenal' ? '📅' : 
-                          cliente.tipoPlazo === 'personalizado' ? '⚙️' : '📊';
-        
         let textoPlazo = '';
         if (cliente.tipoPlazo === 'sin_definir') {
             textoPlazo = 'Sin definir';
@@ -693,7 +679,7 @@ function renderizarClientes() {
                 </td>
                 <td>
                     <div style="display:flex;flex-direction:column;">
-                        <span>${emojiPlazo} ${textoPlazo}</span>
+                        <span>${textoPlazo}</span>
                         ${infoFechas}
                     </div>
                 </td>
@@ -807,16 +793,16 @@ function renderizarCalendario() {
         html += `
             <div class="cuota-item ${estadoClass}">
                 <div class="cuota-info">
-                    <div class="cuota-cliente">👤 ${cuota.clienteNombre}</div>
-                    <div class="cuota-fecha">📅 ${fechaFormateada}</div>
-                    <div class="cuota-monto">💰 ${formatoCOP(cuota.monto)}</div>
+                    <div class="cuota-cliente">${cuota.clienteNombre}</div>
+                    <div class="cuota-fecha">${fechaFormateada}</div>
+                    <div class="cuota-monto">${formatoCOP(cuota.monto)}</div>
                     ${cuota.estado !== 'pagada' ? `
                         <span style="font-size:11px;color:var(--gray-400);">
-                            📋 ${cuotasRestantes} cuota(s) restante(s)
+                            ${cuotasRestantes} cuota(s) restante(s)
                         </span>
                     ` : `
                         <span style="font-size:11px;color:var(--success);">
-                            ✅ Deuda reducida
+                            Deuda reducida
                         </span>
                     `}
                     <span class="cuota-estado ${estadoClass}">${estadoTexto}</span>
@@ -977,17 +963,35 @@ function mostrarSeccion(seccion) {
     document.querySelector(`.nav-item[data-section="${seccion}"]`).classList.add('active');
     document.getElementById('seccionActual').textContent = 
         seccion.charAt(0).toUpperCase() + seccion.slice(1);
+    
+    // CERRAR EL MENÚ AUTOMÁTICAMENTE
+    const sidebar = document.getElementById('sidebar');
+    if (sidebar.classList.contains('open')) {
+        sidebar.classList.remove('open');
+    }
+    
+    const overlay = document.querySelector('.sidebar-overlay');
+    if (overlay) {
+        overlay.classList.remove('active');
+    }
 }
 
 // ===== TOGGLE SIDEBAR =====
 function toggleSidebar() {
-    document.getElementById('sidebar').classList.toggle('open');
+    const sidebar = document.getElementById('sidebar');
+    const overlay = document.getElementById('sidebarOverlay');
+    
+    sidebar.classList.toggle('open');
+    
+    if (overlay) {
+        overlay.classList.toggle('active');
+    }
 }
 
 // ===== EXPORTAR CSV =====
 function exportarCSV() {
     if (clientes.length === 0) {
-        mostrarNotificacion('❌ No hay datos para exportar', 'error');
+        mostrarNotificacion('No hay datos para exportar', 'error');
         return;
     }
     
@@ -1007,7 +1011,7 @@ function exportarCSV() {
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
     
-    mostrarNotificacion('📥 CSV exportado correctamente', 'success');
+    mostrarNotificacion('CSV exportado correctamente', 'success');
 }
 
 // ===== REPORTES PDF =====
@@ -1019,7 +1023,7 @@ function generarReporteGeneral() {
     doc.rect(0, 0, 210, 40, 'F');
     doc.setTextColor(255, 255, 255);
     doc.setFontSize(24);
-    doc.text('💰 PrestaControl', 14, 25);
+    doc.text('PrestaControl', 14, 25);
     doc.setFontSize(14);
     doc.text('Reporte General', 14, 33);
     
@@ -1085,7 +1089,7 @@ function generarReporteGeneral() {
     doc.text('Reporte generado automáticamente por PrestaControl', 14, doc.internal.pageSize.height - 10);
     
     doc.save(`reporte_general_${new Date().toISOString().split('T')[0]}.pdf`);
-    mostrarNotificacion('📄 PDF generado correctamente', 'success');
+    mostrarNotificacion('PDF generado correctamente', 'success');
 }
 
 function generarReporteClientes() {
@@ -1096,7 +1100,7 @@ function generarReporteClientes() {
     doc.rect(0, 0, 210, 40, 'F');
     doc.setTextColor(255, 255, 255);
     doc.setFontSize(24);
-    doc.text('💰 PrestaControl', 14, 25);
+    doc.text('PrestaControl', 14, 25);
     doc.setFontSize(14);
     doc.text('Reporte de Clientes', 14, 33);
     
@@ -1129,7 +1133,7 @@ function generarReporteClientes() {
     doc.text('Reporte generado automáticamente por PrestaControl', 14, doc.internal.pageSize.height - 10);
     
     doc.save(`reporte_clientes_${new Date().toISOString().split('T')[0]}.pdf`);
-    mostrarNotificacion('📄 PDF generado correctamente', 'success');
+    mostrarNotificacion('PDF generado correctamente', 'success');
 }
 
 function generarReporteCuotas() {
@@ -1140,7 +1144,7 @@ function generarReporteCuotas() {
     doc.rect(0, 0, 210, 40, 'F');
     doc.setTextColor(255, 255, 255);
     doc.setFontSize(24);
-    doc.text('💰 PrestaControl', 14, 25);
+    doc.text('PrestaControl', 14, 25);
     doc.setFontSize(14);
     doc.text('Reporte de Cuotas', 14, 33);
     
@@ -1159,7 +1163,7 @@ function generarReporteCuotas() {
         c.clienteNombre,
         formatearFecha(c.fecha),
         formatoCOP(c.monto),
-        c.estado === 'pagada' ? '✅ Pagada' : c.estado === 'atrasada' ? '⚠️ Atrasada' : '⏳ Pendiente'
+        c.estado === 'pagada' ? 'Pagada' : c.estado === 'atrasada' ? 'Atrasada' : 'Pendiente'
     ]);
     
     doc.autoTable({
@@ -1177,7 +1181,7 @@ function generarReporteCuotas() {
     doc.text('Reporte generado automáticamente por PrestaControl', 14, doc.internal.pageSize.height - 10);
     
     doc.save(`reporte_cuotas_${new Date().toISOString().split('T')[0]}.pdf`);
-    mostrarNotificacion('📄 PDF generado correctamente', 'success');
+    mostrarNotificacion('PDF generado correctamente', 'success');
 }
 
 function generarReporteAtrasos() {
@@ -1188,7 +1192,7 @@ function generarReporteAtrasos() {
     doc.rect(0, 0, 210, 40, 'F');
     doc.setTextColor(255, 255, 255);
     doc.setFontSize(24);
-    doc.text('⚠️ PrestaControl', 14, 25);
+    doc.text('PrestaControl', 14, 25);
     doc.setFontSize(14);
     doc.text('Reporte de Atrasos', 14, 33);
     
@@ -1201,7 +1205,7 @@ function generarReporteAtrasos() {
     if (atrasadas.length === 0) {
         doc.setFontSize(16);
         doc.setTextColor(46, 125, 50);
-        doc.text('✅ No hay clientes con cuotas atrasadas', 14, 70);
+        doc.text('No hay clientes con cuotas atrasadas', 14, 70);
     } else {
         doc.setTextColor(198, 40, 40);
         doc.setFontSize(14);
@@ -1229,7 +1233,7 @@ function generarReporteAtrasos() {
     doc.text('Reporte generado automáticamente por PrestaControl', 14, doc.internal.pageSize.height - 10);
     
     doc.save(`reporte_atrasos_${new Date().toISOString().split('T')[0]}.pdf`);
-    mostrarNotificacion('📄 PDF generado correctamente', 'success');
+    mostrarNotificacion('PDF generado correctamente', 'success');
 }
 
 // ===== UTILIDADES =====

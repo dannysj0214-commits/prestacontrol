@@ -13,7 +13,9 @@
     <!-- SIDEBAR -->
     <aside class="sidebar" id="sidebar">
         <div class="sidebar-header">
-            <div class="logo-icon">💰</div>
+            <div class="logo-icon">
+                <i class="fas fa-calculator"></i>
+            </div>
             <h2>Presta<span>Control</span></h2>
         </div>
         
@@ -48,6 +50,9 @@
             </button>
         </div>
     </aside>
+
+    <!-- OVERLAY para móvil -->
+    <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
 
     <!-- CONTENIDO PRINCIPAL -->
     <main class="main-content">
@@ -189,7 +194,6 @@
 
         <!-- ===== SECCIÓN: CLIENTES ===== -->
         <section id="seccion-clientes" class="seccion">
-            <!-- Formulario Agregar/Editar Cliente -->
             <div class="card">
                 <div class="card-header">
                     <h3><i class="fas fa-user-plus"></i> <span id="formTitulo">Nuevo Cliente</span></h3>
@@ -236,7 +240,6 @@
                             <input type="number" id="plazo" placeholder="Ej: 6" min="0">
                         </div>
                     </div>
-                    <!-- Campos para fechas personalizadas -->
                     <div class="form-row" id="campoDiasPago" style="display:none;">
                         <div class="form-group">
                             <label><i class="fas fa-calendar-day"></i> Días de pago</label>
@@ -255,7 +258,6 @@
                 </form>
             </div>
 
-            <!-- Lista de Clientes -->
             <div class="card">
                 <div class="card-header">
                     <h3><i class="fas fa-list"></i> Lista de Clientes</h3>
@@ -264,7 +266,7 @@
                             <i class="fas fa-file-csv"></i> Exportar CSV
                         </button>
                         <button onclick="generarCuotasPendientes()" class="btn-secundario">
-                            <i class="fas fa-sync"></i> Regenerar Cuotas
+                            <i class="fas fa-sync"></i> Regenerar
                         </button>
                     </div>
                 </div>
@@ -343,9 +345,9 @@
                         <label><i class="fas fa-filter"></i> Estado</label>
                         <select id="filtroEstado" onchange="renderizarCalendario()">
                             <option value="todos">Todos</option>
-                            <option value="pendiente">⏳ Pendiente</option>
-                            <option value="pagada">✅ Pagada</option>
-                            <option value="atrasada">⚠️ Atrasada</option>
+                            <option value="pendiente">Pendiente</option>
+                            <option value="pagada">Pagada</option>
+                            <option value="atrasada">Atrasada</option>
                         </select>
                     </div>
                 </div>
@@ -368,7 +370,7 @@
                             <i class="fas fa-file-alt" style="color: #1a237e;"></i>
                         </div>
                         <h4>Reporte General</h4>
-                        <p>Resumen completo de todos los clientes y cuotas</p>
+                        <p>Resumen completo de todos los clientes</p>
                         <button class="btn-primario">
                             <i class="fas fa-file-pdf"></i> Generar PDF
                         </button>
@@ -378,7 +380,7 @@
                             <i class="fas fa-users" style="color: #2e7d32;"></i>
                         </div>
                         <h4>Reporte de Clientes</h4>
-                        <p>Listado detallado de clientes con saldos</p>
+                        <p>Listado detallado de clientes</p>
                         <button class="btn-primario">
                             <i class="fas fa-file-pdf"></i> Generar PDF
                         </button>
@@ -388,7 +390,7 @@
                             <i class="fas fa-calendar-check" style="color: #e65100;"></i>
                         </div>
                         <h4>Reporte de Cuotas</h4>
-                        <p>Estado detallado de todas las cuotas</p>
+                        <p>Estado de todas las cuotas</p>
                         <button class="btn-primario">
                             <i class="fas fa-file-pdf"></i> Generar PDF
                         </button>
@@ -411,7 +413,6 @@
     <!-- NOTIFICACIONES -->
     <div id="notificaciones"></div>
 
-    <!-- Chart.js para gráficos -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="script.js"></script>
 </body>

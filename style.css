@@ -29,10 +29,8 @@
     --shadow-md: 0 4px 16px rgba(0,0,0,0.08);
     --shadow-lg: 0 8px 32px rgba(0,0,0,0.12);
     --radius: 12px;
-    --radius-lg: 16px;
     --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     --sidebar-width: 260px;
-    --sidebar-collapsed: 0px;
     --header-height: 64px;
 }
 
@@ -52,7 +50,7 @@ body {
 }
 
 /* ============================================
-   SIDEBAR - RESPONSIVE
+   SIDEBAR
    ============================================ */
 
 .sidebar {
@@ -82,7 +80,7 @@ body {
 }
 
 .logo-icon {
-    font-size: 28px;
+    font-size: 24px;
     background: rgba(255,255,255,0.15);
     width: 44px;
     height: 44px;
@@ -225,6 +223,26 @@ body {
 }
 
 /* ============================================
+   OVERLAY PARA MÓVIL
+   ============================================ */
+
+.sidebar-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.4);
+    z-index: 999;
+    transition: opacity 0.3s ease;
+}
+
+.sidebar-overlay.active {
+    display: block;
+}
+
+/* ============================================
    MAIN CONTENT
    ============================================ */
 
@@ -238,7 +256,7 @@ body {
 }
 
 /* ============================================
-   TOP HEADER - RESPONSIVE
+   TOP HEADER
    ============================================ */
 
 .top-header {
@@ -374,7 +392,7 @@ body {
 }
 
 /* ============================================
-   STATS GRID - RESPONSIVE
+   STATS GRID
    ============================================ */
 
 .stats-grid {
@@ -436,7 +454,7 @@ body {
 }
 
 /* ============================================
-   DASHBOARD GRID - RESPONSIVE
+   DASHBOARD GRID
    ============================================ */
 
 .dashboard-grid {
@@ -495,7 +513,7 @@ body {
 }
 
 /* ============================================
-   PLAZOS GRID - RESPONSIVE
+   PLAZOS GRID
    ============================================ */
 
 .plazos-grid {
@@ -632,7 +650,7 @@ body {
 }
 
 /* ============================================
-   FORMULARIO - RESPONSIVE
+   FORMULARIO
    ============================================ */
 
 .form-moderno {
@@ -729,7 +747,7 @@ body {
 }
 
 /* ============================================
-   FILTROS - RESPONSIVE
+   FILTROS
    ============================================ */
 
 .filtros-plazo {
@@ -827,7 +845,7 @@ body {
 }
 
 /* ============================================
-   TABLA - RESPONSIVE
+   TABLA
    ============================================ */
 
 .tabla-container {
@@ -904,7 +922,7 @@ tr:hover td {
 }
 
 /* ============================================
-   CALENDARIO - RESPONSIVE
+   CALENDARIO
    ============================================ */
 
 .calendario-grid {
@@ -986,7 +1004,7 @@ tr:hover td {
 }
 
 /* ============================================
-   REPORTES - RESPONSIVE
+   REPORTES
    ============================================ */
 
 .reportes-grid {
@@ -1085,7 +1103,7 @@ tr:hover td {
 }
 
 /* ============================================
-   CUOTAS RESTANTES - BADGE
+   CUOTAS RESTANTES
    ============================================ */
 
 .cuotas-restantes {
@@ -1138,7 +1156,6 @@ tr:hover td {
    ============================================ */
 
 @media (max-width: 768px) {
-    /* === SIDEBAR === */
     .sidebar {
         transform: translateX(-100%);
         width: 280px;
@@ -1146,6 +1163,10 @@ tr:hover td {
     
     .sidebar.open {
         transform: translateX(0);
+    }
+    
+    .sidebar-overlay.active {
+        display: block;
     }
     
     .menu-toggle {
@@ -1157,7 +1178,6 @@ tr:hover td {
         width: 100%;
     }
     
-    /* === HEADER === */
     .top-header {
         padding: 10px 14px;
     }
@@ -1174,12 +1194,10 @@ tr:hover td {
         display: none;
     }
     
-    /* === CONTENIDO === */
     .seccion {
         padding: 12px;
     }
     
-    /* === STATS === */
     .stats-grid {
         grid-template-columns: 1fr 1fr;
         gap: 10px;
@@ -1203,7 +1221,6 @@ tr:hover td {
         font-size: 10px;
     }
     
-    /* === PLAZOS === */
     .plazos-grid {
         grid-template-columns: 1fr 1fr;
         gap: 10px;
@@ -1221,7 +1238,6 @@ tr:hover td {
         font-size: 12px;
     }
     
-    /* === FORMULARIO === */
     .form-row {
         grid-template-columns: 1fr;
         gap: 10px;
@@ -1233,7 +1249,6 @@ tr:hover td {
         padding: 10px 12px;
     }
     
-    /* === FILTROS === */
     .filtros-avanzados {
         grid-template-columns: 1fr;
         gap: 10px;
@@ -1257,7 +1272,6 @@ tr:hover td {
         padding: 4px 8px;
     }
     
-    /* === TABLA === */
     .tabla-container {
         margin: 0 -12px;
         padding: 0 12px;
@@ -1272,7 +1286,6 @@ tr:hover td {
         padding: 8px 10px;
     }
     
-    /* === CALENDARIO === */
     .calendario-grid {
         grid-template-columns: 1fr;
     }
@@ -1288,12 +1301,10 @@ tr:hover td {
         justify-content: center;
     }
     
-    /* === REPORTES === */
     .reportes-grid {
         grid-template-columns: 1fr 1fr;
     }
     
-    /* === CARD === */
     .card {
         padding: 14px;
     }
@@ -1318,7 +1329,6 @@ tr:hover td {
         padding: 6px 10px;
     }
     
-    /* === NOTIFICACIONES === */
     #notificaciones {
         top: 10px;
         right: 10px;
@@ -1330,12 +1340,10 @@ tr:hover td {
         padding: 12px 14px;
     }
     
-    /* === CHART === */
     .chart-container {
         height: 150px;
     }
     
-    /* === PROXIMOS VENCIMIENTOS === */
     .vencimiento-item {
         font-size: 12px;
         padding: 6px 8px;
@@ -1347,7 +1355,6 @@ tr:hover td {
    ============================================ */
 
 @media (max-width: 480px) {
-    /* === STATS === */
     .stats-grid {
         grid-template-columns: 1fr 1fr;
         gap: 8px;
@@ -1368,7 +1375,6 @@ tr:hover td {
         font-size: 16px;
     }
     
-    /* === PLAZOS === */
     .plazos-grid {
         grid-template-columns: 1fr 1fr;
         gap: 8px;
@@ -1382,12 +1388,10 @@ tr:hover td {
         font-size: 12px;
     }
     
-    /* === REPORTES === */
     .reportes-grid {
         grid-template-columns: 1fr;
     }
     
-    /* === TABLA === */
     table {
         font-size: 11px;
         min-width: 500px;
@@ -1397,7 +1401,6 @@ tr:hover td {
         padding: 6px 8px;
     }
     
-    /* === BOTONES === */
     .btn-primario {
         font-size: 13px;
         padding: 10px 16px;
@@ -1410,7 +1413,6 @@ tr:hover td {
         min-height: 24px;
     }
     
-    /* === HEADER === */
     .top-header {
         padding: 8px 10px;
         min-height: 52px;
@@ -1431,7 +1433,6 @@ tr:hover td {
         font-size: 8px;
     }
     
-    /* === SIDEBAR === */
     .sidebar {
         width: 260px;
     }
@@ -1443,7 +1444,7 @@ tr:hover td {
     .logo-icon {
         width: 38px;
         height: 38px;
-        font-size: 22px;
+        font-size: 18px;
     }
     
     .nav-item {
@@ -1451,7 +1452,6 @@ tr:hover td {
         padding: 8px 12px;
     }
     
-    /* === CALENDARIO === */
     .cuota-item {
         padding: 12px 14px;
     }
@@ -1478,31 +1478,6 @@ tr:hover td {
 
 ::-webkit-scrollbar-thumb:hover {
     background: var(--gray-400);
-}
-
-/* ============================================
-   OVERLAY PARA MÓVIL (sidebar abierto)
-   ============================================ */
-
-.sidebar-overlay {
-    display: none;
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(0,0,0,0.4);
-    z-index: 999;
-}
-
-.sidebar-overlay.active {
-    display: block;
-}
-
-@media (max-width: 768px) {
-    .sidebar-overlay.active {
-        display: block;
-    }
 }
 
 /* ============================================
