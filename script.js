@@ -1,7 +1,6 @@
 // ==========================================
 // PRESTACONTROL - SISTEMA COMPLETO
-// VERSIÓN CON CIERRE AUTOMÁTICO DEL MENÚ
-// Y EDICIÓN DE CLIENTES FUNCIONANDO
+// VERSIÓN CORREGIDA - EDICIÓN FUNCIONANDO
 // ==========================================
 
 // ===== CONFIGURACIÓN =====
@@ -211,8 +210,6 @@ function reportarCuota(clienteId, montoPagar) {
         c.clienteId === cliente.id && c.estado === 'pagada'
     ).length;
     const totalCuotas = cuotasPagadas + cuotasRestantes;
-    
-    const porcentaje = ((monto / cliente.monto) * 100).toFixed(1);
     
     let mensaje = `${cliente.nombre} pagó ${formatoCOP(monto)}\n`;
     mensaje += `Saldo restante: ${formatoCOP(cliente.saldo)}\n`;
@@ -447,12 +444,18 @@ function guardarCliente(event) {
 
 // ===== EDITAR CLIENTE =====
 function editarCliente(id) {
+    console.log('🔍 Editando cliente ID:', id);
+    
     const cliente = clientes.find(c => c.id === id);
     if (!cliente) {
         mostrarNotificacion('Cliente no encontrado', 'error');
+        console.error('❌ Cliente no encontrado:', id);
         return;
     }
     
+    console.log('✅ Datos del cliente:', cliente);
+    
+    // Llenar el formulario con los datos del cliente
     document.getElementById('clienteId').value = cliente.id;
     document.getElementById('nombre').value = cliente.nombre;
     document.getElementById('telefono').value = cliente.telefono !== '—' ? cliente.telefono : '';
@@ -464,21 +467,28 @@ function editarCliente(id) {
     document.getElementById('diasPago').value = cliente.diasPago || '';
     document.getElementById('diaFijo').value = cliente.diaFijo || '';
     
+    // Mostrar campos personalizados si es necesario
     if (cliente.tipoPlazo === 'personalizado' || cliente.tipoPlazo === 'quincenal') {
         document.getElementById('campoDiasPago').style.display = 'grid';
     } else {
         document.getElementById('campoDiasPago').style.display = 'none';
     }
     
+    // Cambiar el título y botones del formulario
     document.getElementById('formTitulo').textContent = 'Editar Cliente';
     document.getElementById('btnSubmit').innerHTML = '<i class="fas fa-save"></i> Actualizar Cliente';
     document.getElementById('btnCancelar').style.display = 'inline-block';
     
+    // Hacer scroll al formulario
     document.getElementById('seccion-clientes').scrollIntoView({ behavior: 'smooth' });
+    
+    mostrarNotificacion(`Editando cliente: ${cliente.nombre}`, 'warning');
 }
 
 // ===== CANCELAR EDICIÓN =====
 function cancelarEdicion() {
+    console.log('❌ Cancelando edición');
+    
     document.getElementById('clienteId').value = '';
     document.getElementById('formCliente').reset();
     document.getElementById('fechaInicio').value = new Date().toISOString().split('T')[0];
@@ -1268,7 +1278,10 @@ function mostrarNotificacion(mensaje, tipo = 'success') {
     }, 5000);
 }
 
-// ===== EXPORTAR FUNCIONES GLOBALES =====
+// ==========================================
+// EXPORTAR FUNCIONES GLOBALES
+// ==========================================
+
 window.guardarCliente = guardarCliente;
 window.editarCliente = editarCliente;
 window.cancelarEdicion = cancelarEdicion;
@@ -1289,3 +1302,11 @@ window.generarReporteGeneral = generarReporteGeneral;
 window.generarReporteClientes = generarReporteClientes;
 window.generarReporteCuotas = generarReporteCuotas;
 window.generarReporteAtrasos = generarReporteAtrasos;
+
+console.log('✅ PrestaControl iniciado correctamente');
+console.log('📋 Funciones disponibles:', {
+    editarCliente: typeof window.editarCliente,
+    guardarCliente: typeof window.guardarCliente,
+    eliminarCliente: typeof window.eliminarCliente,
+    reportarCuota: typeof window.reportarCuota
+});
