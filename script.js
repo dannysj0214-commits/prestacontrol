@@ -1,6 +1,6 @@
 // ==========================================
 // PRESTACONTROL - SISTEMA COMPLETO
-// CON SECCIÓN DE REGISTRO DE PAGOS
+// CON REGISTRO DE PAGOS
 // ==========================================
 
 let clientes = [];
@@ -120,7 +120,6 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
-    // Previsualización del interés
     const montoInput = document.getElementById('monto');
     const interesInput = document.getElementById('interes');
     const plazoInput = document.getElementById('plazo');
@@ -139,9 +138,9 @@ document.addEventListener('DOMContentLoaded', function() {
             const resultado = calcularInteres(capital, tasa, plazo, tipo);
             previewEl.innerHTML = `
                 <div style="background:#e8f5e9;padding:8px 12px;border-radius:8px;font-size:12px;line-height:1.6;">
-                    <strong style="color:#2e7d32;">📊 Previsualización</strong><br>
+                    <strong style="color:#2e7d32;">Previsualizacion</strong><br>
                     <span>Capital: ${formatoCOP(capital)}</span><br>
-                    <span>Interés: ${tasa}%</span><br>
+                    <span>Interes: ${tasa}%</span><br>
                     <span style="color:#2e7d32;font-weight:600;">Ganancia: ${formatoCOP(resultado.interesTotal)}</span><br>
                     <span style="color:#1a237e;font-weight:700;">Total a cobrar: ${formatoCOP(resultado.montoTotal)}</span>
                 </div>
@@ -227,7 +226,7 @@ function guardarHistorial() {
 }
 
 // ==========================================
-// REGISTRAR PAGO (NUEVA FUNCIÓN)
+// REGISTRAR PAGO
 // ==========================================
 
 function registrarPago(event) {
@@ -254,7 +253,6 @@ function registrarPago(event) {
         return;
     }
     
-    // Registrar el pago
     const registro = {
         id: Date.now(),
         clienteId: cliente.id,
@@ -269,10 +267,8 @@ function registrarPago(event) {
     
     historialPagos.push(registro);
     
-    // Descontar del saldo
     cliente.saldo = parseFloat((cliente.saldo - monto).toFixed(2));
     
-    // Marcar cuota como pagada
     const cuotaPendiente = cuotas
         .filter(c => c.clienteId === clienteId && c.estado !== 'pagada')
         .sort((a, b) => a.fecha.localeCompare(b.fecha))[0];
@@ -287,11 +283,10 @@ function registrarPago(event) {
     guardarCuotas();
     guardarHistorial();
     
-    // Calcular info actualizada
     const cuotasRestantes = cuotas.filter(c => c.clienteId === cliente.id && c.estado !== 'pagada').length;
     const cuotasPagadas = cuotas.filter(c => c.clienteId === cliente.id && c.estado === 'pagada').length;
     
-    let mensaje = `💵 Pago registrado\n`;
+    let mensaje = `Pago registrado\n`;
     mensaje += `Cliente: ${cliente.nombre}\n`;
     mensaje += `Monto: ${formatoCOP(monto)}\n`;
     mensaje += `Saldo restante: ${formatoCOP(cliente.saldo)}\n`;
@@ -300,10 +295,9 @@ function registrarPago(event) {
     mostrarNotificacion(mensaje, 'success');
     
     if (cliente.saldo <= 0) {
-        mostrarNotificacion(`🎉 ¡${cliente.nombre} ha saldado su deuda!`, 'success');
+        mostrarNotificacion(`¡${cliente.nombre} ha saldado su deuda!`, 'success');
     }
     
-    // Limpiar formulario
     document.getElementById('formPago').reset();
     document.getElementById('pagoFecha').value = new Date().toISOString().split('T')[0];
     document.getElementById('infoPagoCliente').style.display = 'none';
@@ -334,7 +328,6 @@ function actualizarInfoPago() {
     const pagadas = cuotasCliente.filter(c => c.estado === 'pagada').length;
     const restantes = cuotasCliente.length - pagadas;
     
-    // Calcular ganancia
     let ganancia = 0;
     let montoTotal = cliente.monto;
     if (cliente.interes > 0 && cliente.plazo > 0 && cliente.tipoPlazo !== 'sin_definir') {
@@ -343,7 +336,6 @@ function actualizarInfoPago() {
         montoTotal = resultado.montoTotal;
     }
     
-    // Calcular ganancia realizada (proporcional a lo pagado)
     const pagado = montoTotal - cliente.saldo;
     const gananciaRealizada = montoTotal > 0 ? (pagado / montoTotal) * ganancia : 0;
     
@@ -358,8 +350,8 @@ function actualizarInfoPago() {
                 <span class="info-pago-valor">${formatoCOP(cliente.monto)}</span>
             </div>
             <div class="info-pago-item">
-                <span class="info-pago-label">Interés</span>
-                <span class="info-pago-valor">${cliente.interes > 0 ? cliente.interes + '%' : '—'}</span>
+                <span class="info-pago-label">Interes</span>
+                <span class="info-pago-valor">${cliente.interes > 0 ? cliente.interes + '%' : 'Sin interes'}</span>
             </div>
             <div class="info-pago-item">
                 <span class="info-pago-label">Total a Cobrar</span>
@@ -388,7 +380,6 @@ function actualizarInfoPago() {
         </div>
     `;
     
-    // Pre-llenar el monto con la próxima cuota
     const proximaCuota = cuotas
         .filter(c => c.clienteId === clienteId && c.estado !== 'pagada')
         .sort((a, b) => a.fecha.localeCompare(b.fecha))[0];
@@ -420,7 +411,7 @@ function renderizarResumenPorCliente() {
                 <tr>
                     <th>Cliente</th>
                     <th>Capital</th>
-                    <th>Interés</th>
+                    <th>Interes</th>
                     <th>Total a Cobrar</th>
                     <th>Total Pagado</th>
                     <th>Saldo Actual</th>
@@ -438,7 +429,6 @@ function renderizarResumenPorCliente() {
         const total = cuotasCliente.length;
         const restantes = total - pagadas;
         
-        // Calcular ganancias
         let ganancia = 0;
         let montoTotal = cliente.monto;
         if (cliente.interes > 0 && cliente.plazo > 0 && cliente.tipoPlazo !== 'sin_definir') {
@@ -456,7 +446,7 @@ function renderizarResumenPorCliente() {
                 <td>${formatoCOP(cliente.monto)}</td>
                 <td>
                     <span style="background:${cliente.interes > 0 ? '#e8f5e9' : '#f0f0f0'};color:${cliente.interes > 0 ? '#2e7d32' : '#999'};padding:2px 10px;border-radius:12px;font-size:12px;font-weight:600;">
-                        ${cliente.interes > 0 ? cliente.interes + '%' : '—'}
+                        ${cliente.interes > 0 ? cliente.interes + '%' : 'Sin interes'}
                     </span>
                 </td>
                 <td><strong>${formatoCOP(montoTotal)}</strong></td>
@@ -494,7 +484,7 @@ function renderizarHistorialPagos() {
         pagos = pagos.filter(p => p.clienteId === parseInt(clienteId));
     }
     
-    pagos.sort((a, b) => b.id - a.id); // Más recientes primero
+    pagos.sort((a, b) => b.id - a.id);
     
     if (pagos.length === 0) {
         container.innerHTML = '<p class="texto-centrado">No hay pagos registrados</p>';
@@ -637,7 +627,7 @@ function editarCliente(id) {
         if (campos.monto) campos.monto.dispatchEvent(new Event('input'));
         
         document.getElementById('seccion-clientes').scrollIntoView({ behavior: 'smooth' });
-        mostrarNotificacion(`✏️ Editando: ${cliente.nombre}`, 'warning');
+        mostrarNotificacion(`Editando: ${cliente.nombre}`, 'warning');
     } catch (error) {
         console.error('Error:', error);
         mostrarNotificacion('Error al cargar cliente', 'error');
@@ -746,7 +736,7 @@ function guardarCliente(event) {
         }
         guardarCuotas();
         
-        mostrarNotificacion(`✅ Cliente "${nombreVal}" actualizado`, 'success');
+        mostrarNotificacion(`Cliente "${nombreVal}" actualizado`, 'success');
         cancelarEdicion();
         
     } else {
@@ -780,10 +770,10 @@ function guardarCliente(event) {
         if (campoDiasPago) campoDiasPago.style.display = 'none';
         if (previewInteres) previewInteres.innerHTML = '';
         
-        let mensaje = `✅ "${nombreVal}" agregado con ${formatoCOP(montoVal)}`;
+        let mensaje = `"${nombreVal}" agregado con ${formatoCOP(montoVal)}`;
         if (interesVal > 0) {
-            mensaje += `\n💰 Ganancia: ${formatoCOP(interesTotal)}`;
-            mensaje += `\n📊 Total a cobrar: ${formatoCOP(montoTotal)}`;
+            mensaje += `\nGanancia: ${formatoCOP(interesTotal)}`;
+            mensaje += `\nTotal a cobrar: ${formatoCOP(montoTotal)}`;
         }
         mostrarNotificacion(mensaje, 'success');
     }
@@ -875,14 +865,13 @@ function generarCuotasCliente(cliente) {
 }
 
 // ==========================================
-// REPORTAR CUOTA (DESDE TABLA)
+// REPORTAR CUOTA (IR A PAGOS)
 // ==========================================
 
 function reportarCuota(clienteId, montoPagar) {
     const cliente = clientes.find(c => c.id === clienteId);
     if (!cliente) return;
     
-    // Redirigir a la sección de pagos con el cliente seleccionado
     mostrarSeccion('pagos');
     
     setTimeout(() => {
@@ -890,6 +879,10 @@ function reportarCuota(clienteId, montoPagar) {
         if (select) {
             select.value = clienteId;
             actualizarInfoPago();
+        }
+        if (montoPagar) {
+            const montoInput = document.getElementById('pagoMonto');
+            if (montoInput) montoInput.value = Math.round(montoPagar);
         }
     }, 100);
 }
@@ -911,7 +904,6 @@ function reportarCuotaPersonalizada(clienteId) {
         return;
     }
     
-    // Ir a la sección de pagos con datos precargados
     mostrarSeccion('pagos');
     
     setTimeout(() => {
@@ -930,9 +922,6 @@ function reportarCuotaPersonalizada(clienteId) {
 // ==========================================
 
 function verHistorialCliente(clienteId) {
-    const cliente = clientes.find(c => c.id === clienteId);
-    if (!cliente) return;
-    
     mostrarSeccion('pagos');
     
     setTimeout(() => {
@@ -1034,8 +1023,8 @@ function filtrarCalendario(periodo) {
 }
 
 function sincronizarDatos() {
-    mostrarNotificacion('🔄 Sincronizando...', 'warning');
-    setTimeout(() => mostrarNotificacion('✅ Datos sincronizados', 'success'), 1000);
+    mostrarNotificacion('Sincronizando...', 'warning');
+    setTimeout(() => mostrarNotificacion('Datos sincronizados', 'success'), 1000);
 }
 
 // ==========================================
@@ -1075,7 +1064,7 @@ function renderizarClientes() {
                 <tr>
                     <th>Cliente</th>
                     <th>Capital</th>
-                    <th>Interés</th>
+                    <th>Interes</th>
                     <th>Ganancia</th>
                     <th>Total a Cobrar</th>
                     <th>Saldo Actual</th>
@@ -1113,7 +1102,7 @@ function renderizarClientes() {
                 <td>${formatoCOP(cliente.monto)}</td>
                 <td>
                     <span style="background:${tasa > 0 ? '#e8f5e9' : '#f0f0f0'};color:${tasa > 0 ? '#2e7d32' : '#999'};padding:2px 10px;border-radius:12px;font-size:12px;font-weight:600;">
-                        ${tasa > 0 ? tasa + '%' : '—'}
+                        ${tasa > 0 ? tasa + '%' : 'Sin interes'}
                     </span>
                 </td>
                 <td style="color:#2e7d32;font-weight:600;">${ganancia > 0 ? '+' + formatoCOP(ganancia) : '—'}</td>
@@ -1200,8 +1189,8 @@ function renderizarCalendario() {
     let html = '';
     cuotasFiltradas.forEach(cuota => {
         const estadoClass = cuota.estado;
-        const estadoTexto = cuota.estado === 'pagada' ? '✅ Pagada' : 
-                           cuota.estado === 'atrasada' ? '⚠️ Atrasada' : '⏳ Pendiente';
+        const estadoTexto = cuota.estado === 'pagada' ? 'Pagada' : 
+                           cuota.estado === 'atrasada' ? 'Atrasada' : 'Pendiente';
         
         html += `
             <div class="cuota-item ${estadoClass}">
@@ -1288,7 +1277,7 @@ function renderizarProximosVencimientos() {
         return `
             <div class="vencimiento-item ${esUrgente ? 'urgente' : ''}">
                 <span class="vencimiento-cliente">${c.clienteNombre}</span>
-                <span class="vencimiento-fecha">${dias > 0 ? `en ${dias} días` : 'hoy'}</span>
+                <span class="vencimiento-fecha">${dias > 0 ? `en ${dias} dias` : 'hoy'}</span>
                 <span class="vencimiento-monto">${formatoCOP(c.monto)}</span>
             </div>
         `;
@@ -1495,7 +1484,7 @@ function generarReporteGeneral() {
     doc.setTextColor(50);
     doc.text(`Total Clientes: ${clientes.length}`, 14, y); y += 8;
     doc.text(`Capital Prestado: ${formatoCOP(capital)}`, 14, y); y += 8;
-    doc.text(`Ganancias por Interés: ${formatoCOP(ganancias)}`, 14, y); y += 8;
+    doc.text(`Ganancias por Interes: ${formatoCOP(ganancias)}`, 14, y); y += 8;
     doc.text(`Total Cobrado: ${formatoCOP(cobrado)}`, 14, y); y += 8;
     doc.text(`Capital + Ganancias: ${formatoCOP(capital + ganancias)}`, 14, y); y += 8;
     
@@ -1523,7 +1512,7 @@ function generarReporteGeneral() {
     
     doc.autoTable({
         startY: y,
-        head: [['Cliente', 'Capital', 'Interés', 'Ganancia', 'Saldo', 'Cuotas']],
+        head: [['Cliente', 'Capital', 'Interes', 'Ganancia', 'Saldo', 'Cuotas']],
         body: tableData,
         theme: 'striped',
         headStyles: { fillColor: [26, 35, 126] },
@@ -1562,7 +1551,7 @@ function generarReporteClientes() {
     
     doc.autoTable({
         startY: 58,
-        head: [['Cliente', 'Teléfono', 'Capital', 'Interés', 'Saldo', 'Cuotas']],
+        head: [['Cliente', 'Telefono', 'Capital', 'Interes', 'Saldo', 'Cuotas']],
         body: tableData,
         theme: 'striped',
         headStyles: { fillColor: [26, 35, 126] },
@@ -1667,7 +1656,7 @@ function generarReporteIntereses() {
     
     doc.setTextColor(50);
     doc.setFontSize(12);
-    doc.text(`Clientes con interés: ${clientesConInteres.length}`, 14, 55);
+    doc.text(`Clientes con interes: ${clientesConInteres.length}`, 14, 55);
     doc.text(`Ganancias totales: ${formatoCOP(gananciasTotales)}`, 14, 63);
     
     const tableData = clientesConInteres.map(c => {
@@ -1683,7 +1672,7 @@ function generarReporteIntereses() {
     
     doc.autoTable({
         startY: 72,
-        head: [['Cliente', 'Capital', 'Interés', 'Ganancia', 'Total']],
+        head: [['Cliente', 'Capital', 'Interes', 'Ganancia', 'Total']],
         body: tableData,
         theme: 'striped',
         headStyles: { fillColor: [46, 125, 50] },
@@ -1797,4 +1786,4 @@ window.generarReporteAtrasos = generarReporteAtrasos;
 window.generarReporteIntereses = generarReporteIntereses;
 window.generarReportePagos = generarReportePagos;
 
-console.log('✅ PrestaControl con sección de pagos iniciado');
+console.log('PrestaControl iniciado correctamente');

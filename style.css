@@ -422,6 +422,7 @@ body {
     border-radius: var(--radius);
     padding: 20px;
     box-shadow: var(--shadow-sm);
+    margin-bottom: 16px;
 }
 
 .card h3 {
@@ -715,10 +716,6 @@ body {
     color: var(--gray-500);
 }
 
-.filtro-group label i {
-    margin-right: 4px;
-}
-
 .filtro-group select {
     padding: 6px 10px;
     border: 1.5px solid var(--gray-200);
@@ -897,6 +894,38 @@ tr:hover td {
 .cuota-estado.pendiente {
     background: #fff9c4;
     color: #f57f17;
+}
+
+/* INFO PAGO */
+.info-pago-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 12px;
+    margin-top: 10px;
+}
+
+.info-pago-item {
+    background: white;
+    padding: 10px 14px;
+    border-radius: 8px;
+    text-align: center;
+    border: 1px solid var(--gray-200);
+}
+
+.info-pago-label {
+    display: block;
+    font-size: 11px;
+    color: var(--gray-400);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 4px;
+}
+
+.info-pago-valor {
+    display: block;
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--primary);
 }
 
 /* REPORTES */

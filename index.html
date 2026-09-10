@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>R & J  | Préstamos</title>
+    <title>PrestaControl | Sistema de Préstamos</title>
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -16,27 +16,31 @@
             <div class="logo-icon">
                 <i class="fas fa-calculator"></i>
             </div>
-            <h2> R & J <span> CONTROL </span></h2>
+            <h2>Presta<span>Control</span></h2>
         </div>
         
         <nav class="sidebar-nav">
             <a href="#" class="nav-item active" data-section="dashboard" onclick="mostrarSeccion('dashboard')">
                 <i class="fas fa-chart-pie"></i>
-                <span>Inicio</span>
+                <span>Dashboard</span>
                 <span class="nav-badge" id="navBadge">0</span>
             </a>
-          <a href="#" class="nav-item" data-section="cuotas" onclick="mostrarSeccion('cuotas')">
-    <i class="fas fa-calendar-alt"></i>
-    <span>Calendario</span>
-</a>
-<a href="#" class="nav-item" data-section="pagos" onclick="mostrarSeccion('pagos')">
-    <i class="fas fa-hand-holding-usd"></i>
-    <span>Registro de Pagos</span>
-</a>
-<a href="#" class="nav-item" data-section="reportes" onclick="mostrarSeccion('reportes')">
-    <i class="fas fa-file-pdf"></i>
-    <span>Reportes</span>
-</a>
+            <a href="#" class="nav-item" data-section="clientes" onclick="mostrarSeccion('clientes')">
+                <i class="fas fa-users"></i>
+                <span>Clientes</span>
+            </a>
+            <a href="#" class="nav-item" data-section="cuotas" onclick="mostrarSeccion('cuotas')">
+                <i class="fas fa-calendar-alt"></i>
+                <span>Calendario</span>
+            </a>
+            <a href="#" class="nav-item" data-section="pagos" onclick="mostrarSeccion('pagos')">
+                <i class="fas fa-hand-holding-usd"></i>
+                <span>Registro de Pagos</span>
+            </a>
+            <a href="#" class="nav-item" data-section="reportes" onclick="mostrarSeccion('reportes')">
+                <i class="fas fa-file-pdf"></i>
+                <span>Reportes</span>
+            </a>
         </nav>
         
         <div class="sidebar-footer">
@@ -118,7 +122,16 @@
                 </div>
             </div>
 
-            <div class="stats-grid" style="grid-template-columns: repeat(2, 1fr);">
+            <div class="stats-grid" style="grid-template-columns: repeat(3, 1fr);">
+                <div class="stat-card">
+                    <div class="stat-icon" style="background: #e8f5e9;">
+                        <i class="fas fa-check-circle" style="color: #2e7d32;"></i>
+                    </div>
+                    <div class="stat-info">
+                        <span class="stat-label">Total Cobrado</span>
+                        <span class="stat-number" id="totalCobrado">$ 0</span>
+                    </div>
+                </div>
                 <div class="stat-card">
                     <div class="stat-icon" style="background: #fff3e0;">
                         <i class="fas fa-clock" style="color: #e65100;"></i>
@@ -328,6 +341,71 @@
             </div>
         </section>
 
+        <!-- ===== SECCIÓN: REGISTRO DE PAGOS ===== -->
+        <section id="seccion-pagos" class="seccion">
+            <div class="card">
+                <div class="card-header">
+                    <h3><i class="fas fa-hand-holding-usd"></i> Registrar Pago de Cuota</h3>
+                </div>
+                <form id="formPago" class="form-moderno">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label><i class="fas fa-user"></i> Cliente</label>
+                            <select id="pagoCliente" required onchange="actualizarInfoPago()">
+                                <option value="">-- Selecciona un cliente --</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label><i class="fas fa-dollar-sign"></i> Monto a pagar (COP)</label>
+                            <input type="number" id="pagoMonto" placeholder="Ej: 166667" required min="1" step="1">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label><i class="fas fa-calendar"></i> Fecha del pago</label>
+                            <input type="date" id="pagoFecha" required>
+                        </div>
+                        <div class="form-group">
+                            <label><i class="fas fa-sticky-note"></i> Nota (opcional)</label>
+                            <input type="text" id="pagoNota" placeholder="Ej: Pago quincena 1">
+                        </div>
+                    </div>
+                    <div id="infoPagoCliente" style="display:none;background:#f8f9ff;padding:14px;border-radius:8px;border-left:4px solid var(--primary);"></div>
+                    <button type="submit" class="btn-primario" style="margin-top:8px;">
+                        <i class="fas fa-check-circle"></i> Registrar Pago
+                    </button>
+                </form>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h3><i class="fas fa-chart-bar"></i> Resumen de Ganancias por Cliente</h3>
+                    <div class="card-actions">
+                        <button onclick="exportarHistorialPagos()" class="btn-secundario">
+                            <i class="fas fa-file-csv"></i> Exportar Historial
+                        </button>
+                    </div>
+                </div>
+                <div id="resumenPorCliente" class="tabla-container">
+                    <p class="texto-centrado">Cargando resumen...</p>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h3><i class="fas fa-history"></i> Historial de Pagos</h3>
+                    <div class="card-actions">
+                        <select id="filtroHistorialCliente" onchange="renderizarHistorialPagos()" style="padding:6px 10px;border:1.5px solid var(--gray-200);border-radius:8px;font-size:13px;">
+                            <option value="todos">Todos los clientes</option>
+                        </select>
+                    </div>
+                </div>
+                <div id="historialPagos" class="tabla-container">
+                    <p class="texto-centrado">No hay pagos registrados</p>
+                </div>
+            </div>
+        </section>
+
         <!-- ===== SECCIÓN: CALENDARIO ===== -->
         <section id="seccion-cuotas" class="seccion">
             <div class="card">
@@ -440,6 +518,16 @@
                         </div>
                         <h4>Reporte de Intereses</h4>
                         <p>Ganancias generadas por intereses</p>
+                        <button class="btn-primario">
+                            <i class="fas fa-file-pdf"></i> Generar PDF
+                        </button>
+                    </div>
+                    <div class="reporte-card" onclick="generarReportePagos()">
+                        <div class="reporte-icon" style="background: #f3e5f5;">
+                            <i class="fas fa-receipt" style="color: #6a1b9a;"></i>
+                        </div>
+                        <h4>Reporte de Pagos</h4>
+                        <p>Historial completo de pagos</p>
                         <button class="btn-primario">
                             <i class="fas fa-file-pdf"></i> Generar PDF
                         </button>
