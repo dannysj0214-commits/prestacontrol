@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title> R & J | Préstamos</title>
+    <title>PrestaControl | Sistema de Préstamos</title>
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -16,13 +16,13 @@
             <div class="logo-icon">
                 <i class="fas fa-calculator"></i>
             </div>
-            <h2>R & J <span></span></h2>
+            <h2>Presta<span>Control</span></h2>
         </div>
         
         <nav class="sidebar-nav">
             <a href="#" class="nav-item active" data-section="dashboard" onclick="mostrarSeccion('dashboard')">
                 <i class="fas fa-chart-pie"></i>
-                <span>INICIO</span>
+                <span>Dashboard</span>
                 <span class="nav-badge" id="navBadge">0</span>
             </a>
             <a href="#" class="nav-item" data-section="clientes" onclick="mostrarSeccion('clientes')">
@@ -35,11 +35,11 @@
             </a>
             <a href="#" class="nav-item" data-section="pagos" onclick="mostrarSeccion('pagos')">
                 <i class="fas fa-hand-holding-usd"></i>
-                <span>Registrar pago</span>
+                <span>Registro de Pagos</span>
             </a>
             <a href="#" class="nav-item" data-section="reportes" onclick="mostrarSeccion('reportes')">
                 <i class="fas fa-file-pdf"></i>
-                <span>Reporte de clientes </span>
+                <span>Reportes</span>
             </a>
         </nav>
         
@@ -341,8 +341,9 @@
             </div>
         </section>
 
-        <!-- ===== SECCIÓN: REGISTRO DE PAGOS ===== -->
+        <!-- ===== SECCIÓN: REGISTRO DE PAGOS (NUEVA) ===== -->
         <section id="seccion-pagos" class="seccion">
+            <!-- Formulario de Registro de Pago -->
             <div class="card">
                 <div class="card-header">
                     <h3><i class="fas fa-hand-holding-usd"></i> Registrar Pago de Cuota</h3>
@@ -370,13 +371,19 @@
                             <input type="text" id="pagoNota" placeholder="Ej: Pago quincena 1">
                         </div>
                     </div>
-                    <div id="infoPagoCliente" style="display:none;background:#f8f9ff;padding:14px;border-radius:8px;border-left:4px solid var(--primary);"></div>
+                    
+                    <!-- Info del cliente seleccionado -->
+                    <div id="infoPagoCliente" style="display:none;background:#f8f9ff;padding:14px;border-radius:8px;border-left:4px solid var(--primary);">
+                        <!-- Se llena con JS -->
+                    </div>
+                    
                     <button type="submit" class="btn-primario" style="margin-top:8px;">
                         <i class="fas fa-check-circle"></i> Registrar Pago
                     </button>
                 </form>
             </div>
 
+            <!-- Resumen por Cliente -->
             <div class="card">
                 <div class="card-header">
                     <h3><i class="fas fa-chart-bar"></i> Resumen de Ganancias por Cliente</h3>
@@ -391,6 +398,7 @@
                 </div>
             </div>
 
+            <!-- Historial de Pagos -->
             <div class="card">
                 <div class="card-header">
                     <h3><i class="fas fa-history"></i> Historial de Pagos</h3>
