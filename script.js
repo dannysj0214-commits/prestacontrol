@@ -1,6 +1,6 @@
 // ==========================================
 // PRESTACONTROL - SISTEMA COMPLETO
-// CON CÁLCULO DE INTERESES Y GANANCIAS
+// CON SECCIÓN DE REGISTRO DE PAGOS
 // ==========================================
 
 let clientes = [];
@@ -42,7 +42,6 @@ function calcularInteres(capital, tasa, plazo, tipoPlazo) {
         };
     }
     
-    // Convertir período a meses
     let periodos = plazo;
     if (tipoPlazo === 'diario') periodos = plazo / 30;
     else if (tipoPlazo === 'semanal') periodos = plazo / 4;
@@ -94,8 +93,14 @@ document.addEventListener('DOMContentLoaded', function() {
     const fechaInicio = document.getElementById('fechaInicio');
     if (fechaInicio) fechaInicio.value = new Date().toISOString().split('T')[0];
     
+    const pagoFecha = document.getElementById('pagoFecha');
+    if (pagoFecha) pagoFecha.value = new Date().toISOString().split('T')[0];
+    
     const formCliente = document.getElementById('formCliente');
     if (formCliente) formCliente.addEventListener('submit', guardarCliente);
+    
+    const formPago = document.getElementById('formPago');
+    if (formPago) formPago.addEventListener('submit', registrarPago);
     
     const fechaActual = document.getElementById('fechaActual');
     if (fechaActual) {
@@ -167,10 +172,7 @@ function cargarDatosLocales() {
         
         if (clientesGuardados && clientesGuardados !== '[]') {
             clientes = JSON.parse(clientesGuardados);
-            // Asegurar que todos tengan campo interes
-            clientes.forEach(c => {
-                if (c.interes === undefined) c.interes = 0;
-            });
+            clientes.forEach(c => { if (c.interes === undefined) c.interes = 0; });
         } else {
             clientes = getClientesIniciales();
             guardarClientes();
@@ -222,6 +224,351 @@ function guardarCuotas() {
 
 function guardarHistorial() {
     localStorage.setItem('historialPagos', JSON.stringify(historialPagos));
+}
+
+// ==========================================
+// REGISTRAR PAGO (NUEVA FUNCIÓN)
+// ==========================================
+
+function registrarPago(event) {
+    event.preventDefault();
+    
+    const clienteId = parseInt(document.getElementById('pagoCliente').value);
+    const monto = parseFloat(document.getElementById('pagoMonto').value);
+    const fecha = document.getElementById('pagoFecha').value;
+    const nota = document.getElementById('pagoNota')?.value || '';
+    
+    if (!clienteId || !monto || !fecha) {
+        mostrarNotificacion('Completa todos los campos', 'error');
+        return;
+    }
+    
+    const cliente = clientes.find(c => c.id === clienteId);
+    if (!cliente) {
+        mostrarNotificacion('Cliente no encontrado', 'error');
+        return;
+    }
+    
+    if (monto > cliente.saldo) {
+        mostrarNotificacion(`El monto (${formatoCOP(monto)}) supera el saldo (${formatoCOP(cliente.saldo)})`, 'error');
+        return;
+    }
+    
+    // Registrar el pago
+    const registro = {
+        id: Date.now(),
+        clienteId: cliente.id,
+        clienteNombre: cliente.nombre,
+        monto: monto,
+        fecha: fecha,
+        hora: new Date().toLocaleTimeString('es-ES'),
+        nota: nota,
+        saldoAnterior: cliente.saldo,
+        saldoRestante: cliente.saldo - monto
+    };
+    
+    historialPagos.push(registro);
+    
+    // Descontar del saldo
+    cliente.saldo = parseFloat((cliente.saldo - monto).toFixed(2));
+    
+    // Marcar cuota como pagada
+    const cuotaPendiente = cuotas
+        .filter(c => c.clienteId === clienteId && c.estado !== 'pagada')
+        .sort((a, b) => a.fecha.localeCompare(b.fecha))[0];
+    
+    if (cuotaPendiente) {
+        cuotaPendiente.estado = 'pagada';
+        cuotaPendiente.fechaPago = fecha;
+        cuotaPendiente.montoPagado = monto;
+    }
+    
+    guardarClientes();
+    guardarCuotas();
+    guardarHistorial();
+    
+    // Calcular info actualizada
+    const cuotasRestantes = cuotas.filter(c => c.clienteId === cliente.id && c.estado !== 'pagada').length;
+    const cuotasPagadas = cuotas.filter(c => c.clienteId === cliente.id && c.estado === 'pagada').length;
+    
+    let mensaje = `💵 Pago registrado\n`;
+    mensaje += `Cliente: ${cliente.nombre}\n`;
+    mensaje += `Monto: ${formatoCOP(monto)}\n`;
+    mensaje += `Saldo restante: ${formatoCOP(cliente.saldo)}\n`;
+    mensaje += `Cuotas: ${cuotasPagadas} pagadas, ${cuotasRestantes} restantes`;
+    
+    mostrarNotificacion(mensaje, 'success');
+    
+    if (cliente.saldo <= 0) {
+        mostrarNotificacion(`🎉 ¡${cliente.nombre} ha saldado su deuda!`, 'success');
+    }
+    
+    // Limpiar formulario
+    document.getElementById('formPago').reset();
+    document.getElementById('pagoFecha').value = new Date().toISOString().split('T')[0];
+    document.getElementById('infoPagoCliente').style.display = 'none';
+    
+    renderizarTodo();
+}
+
+// ==========================================
+// ACTUALIZAR INFO DEL PAGO
+// ==========================================
+
+function actualizarInfoPago() {
+    const clienteId = parseInt(document.getElementById('pagoCliente').value);
+    const infoDiv = document.getElementById('infoPagoCliente');
+    
+    if (!clienteId || !infoDiv) {
+        if (infoDiv) infoDiv.style.display = 'none';
+        return;
+    }
+    
+    const cliente = clientes.find(c => c.id === clienteId);
+    if (!cliente) {
+        infoDiv.style.display = 'none';
+        return;
+    }
+    
+    const cuotasCliente = cuotas.filter(c => c.clienteId === cliente.id);
+    const pagadas = cuotasCliente.filter(c => c.estado === 'pagada').length;
+    const restantes = cuotasCliente.length - pagadas;
+    
+    // Calcular ganancia
+    let ganancia = 0;
+    let montoTotal = cliente.monto;
+    if (cliente.interes > 0 && cliente.plazo > 0 && cliente.tipoPlazo !== 'sin_definir') {
+        const resultado = calcularInteres(cliente.monto, cliente.interes, cliente.plazo, cliente.tipoPlazo);
+        ganancia = resultado.interesTotal;
+        montoTotal = resultado.montoTotal;
+    }
+    
+    // Calcular ganancia realizada (proporcional a lo pagado)
+    const pagado = montoTotal - cliente.saldo;
+    const gananciaRealizada = montoTotal > 0 ? (pagado / montoTotal) * ganancia : 0;
+    
+    infoDiv.style.display = 'block';
+    infoDiv.innerHTML = `
+        <div style="font-weight:600;color:var(--primary);margin-bottom:10px;">
+            <i class="fas fa-user"></i> ${cliente.nombre}
+        </div>
+        <div class="info-pago-grid">
+            <div class="info-pago-item">
+                <span class="info-pago-label">Capital</span>
+                <span class="info-pago-valor">${formatoCOP(cliente.monto)}</span>
+            </div>
+            <div class="info-pago-item">
+                <span class="info-pago-label">Interés</span>
+                <span class="info-pago-valor">${cliente.interes > 0 ? cliente.interes + '%' : '—'}</span>
+            </div>
+            <div class="info-pago-item">
+                <span class="info-pago-label">Total a Cobrar</span>
+                <span class="info-pago-valor">${formatoCOP(montoTotal)}</span>
+            </div>
+            <div class="info-pago-item">
+                <span class="info-pago-label">Saldo Actual</span>
+                <span class="info-pago-valor" style="color:var(--warning);">${formatoCOP(cliente.saldo)}</span>
+            </div>
+            <div class="info-pago-item">
+                <span class="info-pago-label">Cuotas Pagadas</span>
+                <span class="info-pago-valor" style="color:var(--success);">${pagadas}</span>
+            </div>
+            <div class="info-pago-item">
+                <span class="info-pago-label">Cuotas Restantes</span>
+                <span class="info-pago-valor" style="color:var(--danger);">${restantes}</span>
+            </div>
+            <div class="info-pago-item">
+                <span class="info-pago-label">Ganancia Total</span>
+                <span class="info-pago-valor" style="color:var(--success);">${formatoCOP(ganancia)}</span>
+            </div>
+            <div class="info-pago-item">
+                <span class="info-pago-label">Ganancia Realizada</span>
+                <span class="info-pago-valor" style="color:#6a1b9a;">${formatoCOP(gananciaRealizada)}</span>
+            </div>
+        </div>
+    `;
+    
+    // Pre-llenar el monto con la próxima cuota
+    const proximaCuota = cuotas
+        .filter(c => c.clienteId === clienteId && c.estado !== 'pagada')
+        .sort((a, b) => a.fecha.localeCompare(b.fecha))[0];
+    
+    if (proximaCuota) {
+        const montoInput = document.getElementById('pagoMonto');
+        if (montoInput && !montoInput.value) {
+            montoInput.value = Math.round(proximaCuota.monto);
+        }
+    }
+}
+
+// ==========================================
+// RENDERIZAR RESUMEN POR CLIENTE
+// ==========================================
+
+function renderizarResumenPorCliente() {
+    const container = document.getElementById('resumenPorCliente');
+    if (!container) return;
+    
+    if (clientes.length === 0) {
+        container.innerHTML = '<p class="texto-centrado">No hay clientes</p>';
+        return;
+    }
+    
+    let html = `
+        <table>
+            <thead>
+                <tr>
+                    <th>Cliente</th>
+                    <th>Capital</th>
+                    <th>Interés</th>
+                    <th>Total a Cobrar</th>
+                    <th>Total Pagado</th>
+                    <th>Saldo Actual</th>
+                    <th>Ganancia Total</th>
+                    <th>Ganancia Realizada</th>
+                    <th>Cuotas</th>
+                </tr>
+            </thead>
+            <tbody>
+    `;
+    
+    clientes.forEach(cliente => {
+        const cuotasCliente = cuotas.filter(c => c.clienteId === cliente.id);
+        const pagadas = cuotasCliente.filter(c => c.estado === 'pagada').length;
+        const total = cuotasCliente.length;
+        const restantes = total - pagadas;
+        
+        // Calcular ganancias
+        let ganancia = 0;
+        let montoTotal = cliente.monto;
+        if (cliente.interes > 0 && cliente.plazo > 0 && cliente.tipoPlazo !== 'sin_definir') {
+            const resultado = calcularInteres(cliente.monto, cliente.interes, cliente.plazo, cliente.tipoPlazo);
+            ganancia = resultado.interesTotal;
+            montoTotal = resultado.montoTotal;
+        }
+        
+        const pagado = montoTotal - cliente.saldo;
+        const gananciaRealizada = montoTotal > 0 ? (pagado / montoTotal) * ganancia : 0;
+        
+        html += `
+            <tr>
+                <td><strong>${cliente.nombre}</strong></td>
+                <td>${formatoCOP(cliente.monto)}</td>
+                <td>
+                    <span style="background:${cliente.interes > 0 ? '#e8f5e9' : '#f0f0f0'};color:${cliente.interes > 0 ? '#2e7d32' : '#999'};padding:2px 10px;border-radius:12px;font-size:12px;font-weight:600;">
+                        ${cliente.interes > 0 ? cliente.interes + '%' : '—'}
+                    </span>
+                </td>
+                <td><strong>${formatoCOP(montoTotal)}</strong></td>
+                <td style="color:var(--success);font-weight:600;">${formatoCOP(pagado)}</td>
+                <td style="color:var(--warning);font-weight:600;">${formatoCOP(cliente.saldo)}</td>
+                <td style="color:#2e7d32;font-weight:600;">${formatoCOP(ganancia)}</td>
+                <td style="color:#6a1b9a;font-weight:600;">${formatoCOP(gananciaRealizada)}</td>
+                <td>
+                    <div style="display:flex;flex-direction:column;align-items:center;font-size:12px;">
+                        <span style="font-weight:600;color:var(--success);">${pagadas} pagadas</span>
+                        <span style="color:var(--gray-400);">${restantes} restantes</span>
+                    </div>
+                </td>
+            </tr>
+        `;
+    });
+    
+    html += `</tbody></table>`;
+    container.innerHTML = html;
+}
+
+// ==========================================
+// RENDERIZAR HISTORIAL DE PAGOS
+// ==========================================
+
+function renderizarHistorialPagos() {
+    const container = document.getElementById('historialPagos');
+    if (!container) return;
+    
+    const filtroCliente = document.getElementById('filtroHistorialCliente');
+    const clienteId = filtroCliente ? filtroCliente.value : 'todos';
+    
+    let pagos = [...historialPagos];
+    if (clienteId !== 'todos') {
+        pagos = pagos.filter(p => p.clienteId === parseInt(clienteId));
+    }
+    
+    pagos.sort((a, b) => b.id - a.id); // Más recientes primero
+    
+    if (pagos.length === 0) {
+        container.innerHTML = '<p class="texto-centrado">No hay pagos registrados</p>';
+        return;
+    }
+    
+    let html = `
+        <table>
+            <thead>
+                <tr>
+                    <th>Fecha</th>
+                    <th>Cliente</th>
+                    <th>Monto Pagado</th>
+                    <th>Saldo Anterior</th>
+                    <th>Saldo Restante</th>
+                    <th>Nota</th>
+                </tr>
+            </thead>
+            <tbody>
+    `;
+    
+    pagos.forEach(pago => {
+        html += `
+            <tr>
+                <td>
+                    <div style="display:flex;flex-direction:column;">
+                        <strong>${formatearFecha(pago.fecha)}</strong>
+                        <span style="font-size:11px;color:var(--gray-400);">${pago.hora || ''}</span>
+                    </div>
+                </td>
+                <td><strong>${pago.clienteNombre}</strong></td>
+                <td style="color:var(--success);font-weight:700;">+${formatoCOP(pago.monto)}</td>
+                <td style="color:var(--gray-500);">${formatoCOP(pago.saldoAnterior || 0)}</td>
+                <td style="color:var(--warning);font-weight:600;">${formatoCOP(pago.saldoRestante)}</td>
+                <td style="font-size:12px;color:var(--gray-400);">${pago.nota || '—'}</td>
+            </tr>
+        `;
+    });
+    
+    html += `</tbody></table>`;
+    container.innerHTML = html;
+}
+
+// ==========================================
+// ACTUALIZAR SELECTS
+// ==========================================
+
+function actualizarSelectsPago() {
+    const pagoCliente = document.getElementById('pagoCliente');
+    const filtroHistorial = document.getElementById('filtroHistorialCliente');
+    
+    if (pagoCliente) {
+        const valorActual = pagoCliente.value;
+        pagoCliente.innerHTML = '<option value="">-- Selecciona un cliente --</option>';
+        clientes.forEach(c => {
+            const option = document.createElement('option');
+            option.value = c.id;
+            option.textContent = `${c.nombre} - Saldo: ${formatoCOP(c.saldo)}`;
+            pagoCliente.appendChild(option);
+        });
+        if (valorActual) pagoCliente.value = valorActual;
+    }
+    
+    if (filtroHistorial) {
+        const valorActual = filtroHistorial.value;
+        filtroHistorial.innerHTML = '<option value="todos">Todos los clientes</option>';
+        clientes.forEach(c => {
+            const option = document.createElement('option');
+            option.value = c.id;
+            option.textContent = c.nombre;
+            filtroHistorial.appendChild(option);
+        });
+        if (valorActual) filtroHistorial.value = valorActual;
+    }
 }
 
 // ==========================================
@@ -287,7 +634,6 @@ function editarCliente(id) {
         if (campos.btnSubmit) campos.btnSubmit.innerHTML = '<i class="fas fa-save"></i> Actualizar Cliente';
         if (campos.btnCancelar) campos.btnCancelar.style.display = 'inline-block';
         
-        // Actualizar previsualización
         if (campos.monto) campos.monto.dispatchEvent(new Event('input'));
         
         document.getElementById('seccion-clientes').scrollIntoView({ behavior: 'smooth' });
@@ -361,7 +707,6 @@ function guardarCliente(event) {
         return;
     }
     
-    // Calcular monto total con interés
     let montoTotal = montoVal;
     let interesTotal = 0;
     if (interesVal > 0 && plazoVal > 0 && tipoPlazoVal !== 'sin_definir') {
@@ -371,7 +716,6 @@ function guardarCliente(event) {
     }
     
     if (id) {
-        // EDITAR
         const clienteExistente = clientes.find(c => c.id === parseInt(id));
         if (!clienteExistente) {
             mostrarNotificacion('Cliente no encontrado', 'error');
@@ -406,7 +750,6 @@ function guardarCliente(event) {
         cancelarEdicion();
         
     } else {
-        // NUEVO
         const nuevoCliente = {
             id: Date.now(),
             nombre: nombreVal,
@@ -532,81 +875,23 @@ function generarCuotasCliente(cliente) {
 }
 
 // ==========================================
-// REPORTAR CUOTA
+// REPORTAR CUOTA (DESDE TABLA)
 // ==========================================
 
 function reportarCuota(clienteId, montoPagar) {
     const cliente = clientes.find(c => c.id === clienteId);
     if (!cliente) return;
     
-    let monto = montoPagar;
-    if (!monto || monto <= 0) {
-        const cuotaPendiente = cuotas
-            .filter(c => c.clienteId === clienteId && c.estado === 'pendiente')
-            .sort((a, b) => a.fecha.localeCompare(b.fecha))[0];
-        
-        if (cuotaPendiente) monto = cuotaPendiente.monto;
-        else {
-            mostrarNotificacion(`${cliente.nombre} no tiene cuotas pendientes`, 'error');
-            return;
+    // Redirigir a la sección de pagos con el cliente seleccionado
+    mostrarSeccion('pagos');
+    
+    setTimeout(() => {
+        const select = document.getElementById('pagoCliente');
+        if (select) {
+            select.value = clienteId;
+            actualizarInfoPago();
         }
-    }
-    
-    if (monto > cliente.saldo) {
-        mostrarNotificacion(`El monto (${formatoCOP(monto)}) supera el saldo`, 'error');
-        return;
-    }
-    
-    const cuota = cuotas.find(c => 
-        c.clienteId === clienteId && c.estado === 'pendiente' && Math.abs(c.monto - monto) < 1
-    );
-    
-    if (!cuota) {
-        const cuotasPendientes = cuotas
-            .filter(c => c.clienteId === clienteId && c.estado === 'pendiente')
-            .sort((a, b) => a.fecha.localeCompare(b.fecha));
-        
-        if (cuotasPendientes.length > 0) {
-            cuotasPendientes[0].estado = 'pagada';
-            monto = cuotasPendientes[0].monto;
-        } else {
-            mostrarNotificacion(`${cliente.nombre} no tiene cuotas pendientes`, 'error');
-            return;
-        }
-    } else {
-        cuota.estado = 'pagada';
-    }
-    
-    cliente.saldo = parseFloat((cliente.saldo - monto).toFixed(2));
-    
-    historialPagos.push({
-        id: Date.now(),
-        clienteId: cliente.id,
-        clienteNombre: cliente.nombre,
-        monto: monto,
-        fecha: new Date().toISOString().split('T')[0],
-        hora: new Date().toLocaleTimeString('es-ES'),
-        saldoRestante: cliente.saldo
-    });
-    
-    guardarClientes();
-    guardarCuotas();
-    guardarHistorial();
-    
-    const cuotasRestantes = cuotas.filter(c => c.clienteId === cliente.id && c.estado !== 'pagada').length;
-    const cuotasPagadas = cuotas.filter(c => c.clienteId === cliente.id && c.estado === 'pagada').length;
-    
-    let mensaje = `${cliente.nombre} pagó ${formatoCOP(monto)}\n`;
-    mensaje += `Saldo restante: ${formatoCOP(cliente.saldo)}\n`;
-    mensaje += `Cuotas: ${cuotasPagadas}/${cuotasPagadas + cuotasRestantes} pagadas`;
-    
-    mostrarNotificacion(mensaje, 'success');
-    
-    if (cliente.saldo <= 0) {
-        mostrarNotificacion(`🎉 ¡${cliente.nombre} ha saldado su deuda!`, 'success');
-    }
-    
-    renderizarTodo();
+    }, 100);
 }
 
 function reportarCuotaPersonalizada(clienteId) {
@@ -626,7 +911,18 @@ function reportarCuotaPersonalizada(clienteId) {
         return;
     }
     
-    reportarCuota(clienteId, monto);
+    // Ir a la sección de pagos con datos precargados
+    mostrarSeccion('pagos');
+    
+    setTimeout(() => {
+        const select = document.getElementById('pagoCliente');
+        const montoField = document.getElementById('pagoMonto');
+        if (select) {
+            select.value = clienteId;
+            actualizarInfoPago();
+        }
+        if (montoField) montoField.value = Math.round(monto);
+    }, 100);
 }
 
 // ==========================================
@@ -637,25 +933,15 @@ function verHistorialCliente(clienteId) {
     const cliente = clientes.find(c => c.id === clienteId);
     if (!cliente) return;
     
-    const pagos = historialPagos.filter(h => h.clienteId === clienteId);
+    mostrarSeccion('pagos');
     
-    if (pagos.length === 0) {
-        mostrarNotificacion(`${cliente.nombre} no tiene pagos`, 'warning');
-        return;
-    }
-    
-    let mensaje = `HISTORIAL DE ${cliente.nombre.toUpperCase()}\n`;
-    mensaje += '━'.repeat(40) + '\n';
-    
-    pagos.forEach((p, i) => {
-        mensaje += `${i+1}. ${formatoCOP(p.monto)} - ${p.fecha}\n`;
-        mensaje += `   Saldo: ${formatoCOP(p.saldoRestante)}\n`;
-    });
-    
-    mensaje += '━'.repeat(40) + '\n';
-    mensaje += `Total pagado: ${formatoCOP(pagos.reduce((sum, p) => sum + p.monto, 0))}`;
-    
-    mostrarNotificacion(mensaje, 'success');
+    setTimeout(() => {
+        const filtro = document.getElementById('filtroHistorialCliente');
+        if (filtro) {
+            filtro.value = clienteId;
+            renderizarHistorialPagos();
+        }
+    }, 100);
 }
 
 // ==========================================
@@ -761,9 +1047,12 @@ function renderizarTodo() {
     renderizarCalendario();
     renderizarDashboard();
     renderizarProximosVencimientos();
+    renderizarResumenPorCliente();
+    renderizarHistorialPagos();
     actualizarEstadisticas();
     actualizarPlazos();
     actualizarFiltros();
+    actualizarSelectsPago();
 }
 
 function renderizarClientes() {
@@ -790,7 +1079,6 @@ function renderizarClientes() {
                     <th>Ganancia</th>
                     <th>Total a Cobrar</th>
                     <th>Saldo Actual</th>
-                    <th>Plazo</th>
                     <th>Cuotas</th>
                     <th>Acciones</th>
                 </tr>
@@ -804,7 +1092,6 @@ function renderizarClientes() {
         const total = cuotasCliente.length;
         const restantes = total - pagadas;
         
-        // Calcular interés y ganancia
         const tasa = cliente.interes || 0;
         let ganancia = cliente.interesTotal || 0;
         let montoTotal = cliente.montoTotal || cliente.monto;
@@ -815,16 +1102,7 @@ function renderizarClientes() {
             montoTotal = resultado.montoTotal;
         }
         
-        let textoPlazo = '';
-        if (cliente.tipoPlazo === 'sin_definir') textoPlazo = 'Sin definir';
-        else if (cliente.tipoPlazo === 'diario') textoPlazo = `${cliente.plazo} días`;
-        else if (cliente.tipoPlazo === 'semanal') textoPlazo = `${cliente.plazo} semanas`;
-        else if (cliente.tipoPlazo === 'quincenal') textoPlazo = `${cliente.plazo} quincenas`;
-        else if (cliente.tipoPlazo === 'personalizado') textoPlazo = 'Personalizado';
-        else textoPlazo = `${cliente.plazo} meses`;
-        
         const porcentajeSaldo = montoTotal > 0 ? Math.round((cliente.saldo / montoTotal) * 100) : 0;
-        
         let saldoColor = 'var(--success)';
         if (porcentajeSaldo > 75) saldoColor = 'var(--danger)';
         else if (porcentajeSaldo > 40) saldoColor = 'var(--warning)';
@@ -835,37 +1113,27 @@ function renderizarClientes() {
                 <td>${formatoCOP(cliente.monto)}</td>
                 <td>
                     <span style="background:${tasa > 0 ? '#e8f5e9' : '#f0f0f0'};color:${tasa > 0 ? '#2e7d32' : '#999'};padding:2px 10px;border-radius:12px;font-size:12px;font-weight:600;">
-                        ${tasa > 0 ? tasa + '%' : 'Sin interés'}
+                        ${tasa > 0 ? tasa + '%' : '—'}
                     </span>
                 </td>
-                <td>
-                    <span style="color:#2e7d32;font-weight:600;">
-                        ${ganancia > 0 ? '+' + formatoCOP(ganancia) : '—'}
-                    </span>
-                </td>
+                <td style="color:#2e7d32;font-weight:600;">${ganancia > 0 ? '+' + formatoCOP(ganancia) : '—'}</td>
                 <td><strong style="color:var(--primary);">${formatoCOP(montoTotal)}</strong></td>
                 <td>
                     <div style="display:flex;flex-direction:column;">
-                        <span style="font-weight:700;color:${saldoColor};">
-                            ${formatoCOP(cliente.saldo)}
-                        </span>
+                        <span style="font-weight:700;color:${saldoColor};">${formatoCOP(cliente.saldo)}</span>
                         <span style="font-size:10px;color:var(--gray-400);">${porcentajeSaldo}%</span>
                     </div>
                 </td>
-                <td>${textoPlazo}</td>
                 <td>
-                    <div style="display:flex;flex-direction:column;align-items:center;">
-                        <span style="font-weight:600;color:var(--primary);">${restantes}</span>
-                        <span style="font-size:10px;color:var(--gray-400);">de ${total}</span>
+                    <div style="display:flex;flex-direction:column;align-items:center;font-size:12px;">
+                        <span style="font-weight:600;color:var(--primary);">${restantes} restantes</span>
+                        <span style="color:var(--gray-400);">${pagadas} pagadas</span>
                     </div>
                 </td>
                 <td>
                     <div style="display:flex;gap:4px;flex-wrap:wrap;">
                         <button onclick="reportarCuota(${cliente.id})" class="btn-accion" style="background:var(--success-light);color:var(--success);" title="Reportar pago">
                             <i class="fas fa-hand-holding-usd"></i>
-                        </button>
-                        <button onclick="reportarCuotaPersonalizada(${cliente.id})" class="btn-accion" style="background:var(--info-light);color:var(--info);" title="Pago personalizado">
-                            <i class="fas fa-pen"></i>
                         </button>
                         <button onclick="verHistorialCliente(${cliente.id})" class="btn-accion" style="background:var(--warning-light);color:var(--warning);" title="Historial">
                             <i class="fas fa-history"></i>
@@ -1028,7 +1296,7 @@ function renderizarProximosVencimientos() {
 }
 
 // ==========================================
-// ACTUALIZAR ESTADÍSTICAS CON GANANCIAS
+// ESTADÍSTICAS
 // ==========================================
 
 function actualizarEstadisticas() {
@@ -1036,15 +1304,14 @@ function actualizarEstadisticas() {
     const totalPrestado = document.getElementById('totalPrestado');
     const totalGanancias = document.getElementById('totalGanancias');
     const totalConGanancias = document.getElementById('totalConGanancias');
+    const totalCobrado = document.getElementById('totalCobrado');
     const cuotasPendientes = document.getElementById('cuotasPendientes');
     const cuotasAtrasadas = document.getElementById('cuotasAtrasadas');
     
     if (totalClientes) totalClientes.textContent = clientes.length;
     
-    // Capital prestado (solo capital sin intereses)
     const capitalPrestado = clientes.reduce((sum, c) => sum + c.monto, 0);
     
-    // Ganancias por intereses
     let gananciasTotales = 0;
     clientes.forEach(cliente => {
         const tasa = cliente.interes || 0;
@@ -1055,10 +1322,12 @@ function actualizarEstadisticas() {
     });
     
     const capitalConGanancias = capitalPrestado + gananciasTotales;
+    const cobrado = historialPagos.reduce((sum, p) => sum + p.monto, 0);
     
     if (totalPrestado) totalPrestado.textContent = formatoCOP(capitalPrestado);
     if (totalGanancias) totalGanancias.textContent = formatoCOP(gananciasTotales);
     if (totalConGanancias) totalConGanancias.textContent = formatoCOP(capitalConGanancias);
+    if (totalCobrado) totalCobrado.textContent = formatoCOP(cobrado);
     
     if (cuotasPendientes) {
         cuotasPendientes.textContent = cuotas.filter(c => c.estado === 'pendiente').length;
@@ -1075,24 +1344,21 @@ function actualizarPlazos() {
     const quincenales = clientes.filter(c => c.tipoPlazo === 'quincenal');
     const mensuales = clientes.filter(c => c.tipoPlazo === 'mensual' || c.tipoPlazo === 'personalizado');
     
-    const clientesDiario = document.getElementById('clientesDiario');
-    const clientesSemanal = document.getElementById('clientesSemanal');
-    const clientesQuincenal = document.getElementById('clientesQuincenal');
-    const clientesMensual = document.getElementById('clientesMensual');
-    const montoDiario = document.getElementById('montoDiario');
-    const montoSemanal = document.getElementById('montoSemanal');
-    const montoQuincenal = document.getElementById('montoQuincenal');
-    const montoMensual = document.getElementById('montoMensual');
+    const elementos = {
+        clientesDiario: diarios.length,
+        clientesSemanal: semanales.length,
+        clientesQuincenal: quincenales.length,
+        clientesMensual: mensuales.length,
+        montoDiario: formatoCOP(diarios.reduce((sum, c) => sum + c.monto, 0)),
+        montoSemanal: formatoCOP(semanales.reduce((sum, c) => sum + c.monto, 0)),
+        montoQuincenal: formatoCOP(quincenales.reduce((sum, c) => sum + c.monto, 0)),
+        montoMensual: formatoCOP(mensuales.reduce((sum, c) => sum + c.monto, 0))
+    };
     
-    if (clientesDiario) clientesDiario.textContent = diarios.length;
-    if (clientesSemanal) clientesSemanal.textContent = semanales.length;
-    if (clientesQuincenal) clientesQuincenal.textContent = quincenales.length;
-    if (clientesMensual) clientesMensual.textContent = mensuales.length;
-    
-    if (montoDiario) montoDiario.textContent = formatoCOP(diarios.reduce((sum, c) => sum + c.monto, 0));
-    if (montoSemanal) montoSemanal.textContent = formatoCOP(semanales.reduce((sum, c) => sum + c.monto, 0));
-    if (montoQuincenal) montoQuincenal.textContent = formatoCOP(quincenales.reduce((sum, c) => sum + c.monto, 0));
-    if (montoMensual) montoMensual.textContent = formatoCOP(mensuales.reduce((sum, c) => sum + c.monto, 0));
+    Object.keys(elementos).forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.textContent = elementos[id];
+    });
 }
 
 function actualizarFiltros() {
@@ -1127,7 +1393,8 @@ function mostrarSeccion(seccion) {
     if (seccionEl) seccionEl.classList.add('active');
     if (navEl) navEl.classList.add('active');
     if (seccionActual) {
-        seccionActual.textContent = seccion.charAt(0).toUpperCase() + seccion.slice(1);
+        seccionActual.textContent = seccion === 'pagos' ? 'Registro de Pagos' : 
+                                    seccion.charAt(0).toUpperCase() + seccion.slice(1);
     }
     
     const sidebar = document.getElementById('sidebar');
@@ -1145,7 +1412,7 @@ function toggleSidebar() {
 }
 
 // ==========================================
-// EXPORTAR CSV
+// EXPORTAR
 // ==========================================
 
 function exportarCSV() {
@@ -1154,7 +1421,7 @@ function exportarCSV() {
         return;
     }
     
-    const headers = ['id', 'nombre', 'telefono', 'monto', 'interes', 'montoTotal', 'interesTotal', 'fechaInicio', 'tipoPlazo', 'plazo', 'saldo', 'diasPago', 'diaFijo'];
+    const headers = ['id', 'nombre', 'telefono', 'monto', 'interes', 'montoTotal', 'interesTotal', 'fechaInicio', 'tipoPlazo', 'plazo', 'saldo'];
     const csvContent = [
         headers.join(','),
         ...clientes.map(c => headers.map(h => c[h] || '').join(','))
@@ -1165,12 +1432,33 @@ function exportarCSV() {
     const a = document.createElement('a');
     a.href = url;
     a.download = `clientes_${new Date().toISOString().split('T')[0]}.csv`;
-    document.body.appendChild(a);
     a.click();
-    document.body.removeChild(a);
     URL.revokeObjectURL(url);
     
     mostrarNotificacion('CSV exportado', 'success');
+}
+
+function exportarHistorialPagos() {
+    if (historialPagos.length === 0) {
+        mostrarNotificacion('No hay pagos', 'error');
+        return;
+    }
+    
+    const headers = ['id', 'clienteNombre', 'monto', 'fecha', 'hora', 'saldoAnterior', 'saldoRestante', 'nota'];
+    const csvContent = [
+        headers.join(','),
+        ...historialPagos.map(p => headers.map(h => p[h] || '').join(','))
+    ].join('\n');
+    
+    const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `historial_pagos_${new Date().toISOString().split('T')[0]}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    
+    mostrarNotificacion('Historial exportado', 'success');
 }
 
 // ==========================================
@@ -1200,6 +1488,7 @@ function generarReporteGeneral() {
             ganancias += calcularInteres(c.monto, c.interes, c.plazo, c.tipoPlazo).interesTotal;
         }
     });
+    const cobrado = historialPagos.reduce((sum, p) => sum + p.monto, 0);
     
     let y = 65;
     doc.setFontSize(12);
@@ -1207,6 +1496,7 @@ function generarReporteGeneral() {
     doc.text(`Total Clientes: ${clientes.length}`, 14, y); y += 8;
     doc.text(`Capital Prestado: ${formatoCOP(capital)}`, 14, y); y += 8;
     doc.text(`Ganancias por Interés: ${formatoCOP(ganancias)}`, 14, y); y += 8;
+    doc.text(`Total Cobrado: ${formatoCOP(cobrado)}`, 14, y); y += 8;
     doc.text(`Capital + Ganancias: ${formatoCOP(capital + ganancias)}`, 14, y); y += 8;
     
     y += 10;
@@ -1257,22 +1547,22 @@ function generarReporteClientes() {
     doc.setFontSize(14);
     doc.text('Reporte de Clientes', 14, 33);
     
-    doc.setTextColor(100);
-    doc.setFontSize(11);
-    doc.text(`Fecha: ${new Date().toLocaleDateString('es-ES')}`, 14, 50);
-    
-    const tableData = clientes.map(c => [
-        c.nombre,
-        c.telefono || '',
-        formatoCOP(c.monto),
-        c.interes > 0 ? c.interes + '%' : '—',
-        formatoCOP(c.saldo),
-        c.tipoPlazo === 'sin_definir' ? 'Sin definir' : `${c.plazo} ${c.tipoPlazo}`
-    ]);
+    const tableData = clientes.map(c => {
+        const cuotasCliente = cuotas.filter(cu => cu.clienteId === c.id);
+        const pagadas = cuotasCliente.filter(cu => cu.estado === 'pagada').length;
+        return [
+            c.nombre,
+            c.telefono || '',
+            formatoCOP(c.monto),
+            c.interes > 0 ? c.interes + '%' : '—',
+            formatoCOP(c.saldo),
+            `${pagadas}/${cuotasCliente.length}`
+        ];
+    });
     
     doc.autoTable({
         startY: 58,
-        head: [['Cliente', 'Teléfono', 'Capital', 'Interés', 'Saldo', 'Plazo']],
+        head: [['Cliente', 'Teléfono', 'Capital', 'Interés', 'Saldo', 'Cuotas']],
         body: tableData,
         theme: 'striped',
         headStyles: { fillColor: [26, 35, 126] },
@@ -1295,10 +1585,6 @@ function generarReporteCuotas() {
     doc.text('PrestaControl', 14, 25);
     doc.setFontSize(14);
     doc.text('Reporte de Cuotas', 14, 33);
-    
-    doc.setTextColor(100);
-    doc.setFontSize(11);
-    doc.text(`Fecha: ${new Date().toLocaleDateString('es-ES')}`, 14, 50);
     
     const tableData = cuotas.map(c => [
         c.clienteNombre,
@@ -1373,10 +1659,6 @@ function generarReporteIntereses() {
     doc.setFontSize(14);
     doc.text('Reporte de Intereses', 14, 33);
     
-    doc.setTextColor(100);
-    doc.setFontSize(11);
-    doc.text(`Fecha: ${new Date().toLocaleDateString('es-ES')}`, 14, 50);
-    
     const clientesConInteres = clientes.filter(c => c.interes > 0);
     let gananciasTotales = 0;
     clientesConInteres.forEach(c => {
@@ -1385,8 +1667,8 @@ function generarReporteIntereses() {
     
     doc.setTextColor(50);
     doc.setFontSize(12);
-    doc.text(`Clientes con interés: ${clientesConInteres.length}`, 14, 62);
-    doc.text(`Ganancias totales: ${formatoCOP(gananciasTotales)}`, 14, 70);
+    doc.text(`Clientes con interés: ${clientesConInteres.length}`, 14, 55);
+    doc.text(`Ganancias totales: ${formatoCOP(gananciasTotales)}`, 14, 63);
     
     const tableData = clientesConInteres.map(c => {
         const resultado = calcularInteres(c.monto, c.interes, c.plazo, c.tipoPlazo);
@@ -1400,7 +1682,7 @@ function generarReporteIntereses() {
     });
     
     doc.autoTable({
-        startY: 78,
+        startY: 72,
         head: [['Cliente', 'Capital', 'Interés', 'Ganancia', 'Total']],
         body: tableData,
         theme: 'striped',
@@ -1413,11 +1695,55 @@ function generarReporteIntereses() {
     mostrarNotificacion('PDF generado', 'success');
 }
 
+function generarReportePagos() {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF('p', 'mm', 'a4');
+    
+    doc.setFillColor(106, 27, 154);
+    doc.rect(0, 0, 210, 40, 'F');
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(24);
+    doc.text('PrestaControl', 14, 25);
+    doc.setFontSize(14);
+    doc.text('Reporte de Pagos', 14, 33);
+    
+    doc.setTextColor(100);
+    doc.setFontSize(11);
+    doc.text(`Fecha: ${new Date().toLocaleDateString('es-ES')}`, 14, 50);
+    
+    const totalPagos = historialPagos.reduce((sum, p) => sum + p.monto, 0);
+    doc.setTextColor(50);
+    doc.setFontSize(12);
+    doc.text(`Total de pagos: ${historialPagos.length}`, 14, 62);
+    doc.text(`Total cobrado: ${formatoCOP(totalPagos)}`, 14, 70);
+    
+    const tableData = historialPagos.map(p => [
+        formatearFecha(p.fecha),
+        p.clienteNombre,
+        formatoCOP(p.monto),
+        formatoCOP(p.saldoRestante)
+    ]);
+    
+    doc.autoTable({
+        startY: 78,
+        head: [['Fecha', 'Cliente', 'Monto', 'Saldo Restante']],
+        body: tableData,
+        theme: 'striped',
+        headStyles: { fillColor: [106, 27, 154] },
+        styles: { fontSize: 9 },
+        margin: { left: 14, right: 14 }
+    });
+    
+    doc.save(`reporte_pagos_${new Date().toISOString().split('T')[0]}.pdf`);
+    mostrarNotificacion('PDF generado', 'success');
+}
+
 // ==========================================
 // UTILIDADES
 // ==========================================
 
 function formatearFecha(fecha) {
+    if (!fecha) return '—';
     const partes = fecha.split('-');
     const meses = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 
                    'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
@@ -1451,6 +1777,10 @@ window.eliminarCliente = eliminarCliente;
 window.reportarCuota = reportarCuota;
 window.reportarCuotaPersonalizada = reportarCuotaPersonalizada;
 window.verHistorialCliente = verHistorialCliente;
+window.registrarPago = registrarPago;
+window.actualizarInfoPago = actualizarInfoPago;
+window.exportarHistorialPagos = exportarHistorialPagos;
+window.renderizarHistorialPagos = renderizarHistorialPagos;
 window.generarCuotasPendientes = generarCuotasPendientes;
 window.verificarAtrasos = verificarAtrasos;
 window.sincronizarDatos = sincronizarDatos;
@@ -1465,5 +1795,6 @@ window.generarReporteClientes = generarReporteClientes;
 window.generarReporteCuotas = generarReporteCuotas;
 window.generarReporteAtrasos = generarReporteAtrasos;
 window.generarReporteIntereses = generarReporteIntereses;
+window.generarReportePagos = generarReportePagos;
 
-console.log('✅ PrestaControl con Intereses iniciado');
+console.log('✅ PrestaControl con sección de pagos iniciado');
