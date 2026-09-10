@@ -1,6 +1,5 @@
 /* ============================================
    PRESTACONTROL - ESTILOS PROFESIONALES
-   VERSIÓN COMPLETAMENTE RESPONSIVE
    ============================================ */
 
 :root {
@@ -49,15 +48,11 @@ body {
     overflow-x: hidden;
 }
 
-/* ============================================
-   SIDEBAR
-   ============================================ */
-
+/* SIDEBAR */
 .sidebar {
     width: var(--sidebar-width);
     background: var(--primary-gradient);
     color: white;
-    padding: 0;
     display: flex;
     flex-direction: column;
     position: fixed;
@@ -76,7 +71,6 @@ body {
     display: flex;
     align-items: center;
     gap: 12px;
-    flex-shrink: 0;
 }
 
 .logo-icon {
@@ -94,7 +88,6 @@ body {
 .sidebar-header h2 {
     font-size: 20px;
     font-weight: 700;
-    letter-spacing: -0.5px;
     white-space: nowrap;
 }
 
@@ -108,7 +101,6 @@ body {
     display: flex;
     flex-direction: column;
     gap: 2px;
-    overflow-y: auto;
 }
 
 .nav-item {
@@ -131,10 +123,6 @@ body {
     width: 22px;
     text-align: center;
     flex-shrink: 0;
-}
-
-.nav-item span {
-    white-space: nowrap;
 }
 
 .nav-item:hover {
@@ -172,7 +160,6 @@ body {
 .sidebar-footer {
     padding: 16px 20px;
     border-top: 1px solid rgba(255,255,255,0.1);
-    flex-shrink: 0;
 }
 
 .status-indicator {
@@ -188,7 +175,6 @@ body {
     width: 8px;
     height: 8px;
     border-radius: 50%;
-    display: inline-block;
 }
 
 .status-dot.online {
@@ -222,10 +208,7 @@ body {
     background: rgba(255,255,255,0.2);
 }
 
-/* ============================================
-   OVERLAY PARA MÓVIL
-   ============================================ */
-
+/* OVERLAY */
 .sidebar-overlay {
     display: none;
     position: fixed;
@@ -235,29 +218,19 @@ body {
     bottom: 0;
     background: rgba(0, 0, 0, 0.4);
     z-index: 999;
-    transition: opacity 0.3s ease;
 }
 
 .sidebar-overlay.active {
     display: block;
 }
 
-/* ============================================
-   MAIN CONTENT
-   ============================================ */
-
+/* MAIN */
 .main-content {
     margin-left: var(--sidebar-width);
     flex: 1;
-    padding: 0;
     min-height: 100vh;
     width: calc(100% - var(--sidebar-width));
-    transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
-
-/* ============================================
-   TOP HEADER
-   ============================================ */
 
 .top-header {
     background: white;
@@ -290,11 +263,6 @@ body {
     cursor: pointer;
     padding: 4px 8px;
     border-radius: 8px;
-    transition: var(--transition);
-}
-
-.menu-toggle:hover {
-    background: var(--gray-100);
 }
 
 .breadcrumb {
@@ -335,11 +303,6 @@ body {
     cursor: pointer;
     padding: 6px;
     border-radius: 50%;
-    transition: var(--transition);
-}
-
-.btn-notificacion:hover {
-    background: var(--gray-100);
 }
 
 .badge {
@@ -364,7 +327,6 @@ body {
     gap: 8px;
     font-size: 13px;
     font-weight: 500;
-    color: var(--gray-600);
 }
 
 .user-profile i {
@@ -372,10 +334,7 @@ body {
     color: var(--primary);
 }
 
-/* ============================================
-   SECCIONES
-   ============================================ */
-
+/* SECCIONES */
 .seccion {
     display: none;
     padding: 20px;
@@ -391,10 +350,7 @@ body {
     to { opacity: 1; transform: translateY(0); }
 }
 
-/* ============================================
-   STATS GRID
-   ============================================ */
-
+/* STATS */
 .stats-grid {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
@@ -453,10 +409,7 @@ body {
     white-space: nowrap;
 }
 
-/* ============================================
-   DASHBOARD GRID
-   ============================================ */
-
+/* DASHBOARD */
 .dashboard-grid {
     display: grid;
     grid-template-columns: 2fr 1fr;
@@ -503,19 +456,12 @@ body {
     flex-wrap: wrap;
 }
 
-/* ============================================
-   CHART
-   ============================================ */
-
 .chart-container {
     height: 180px;
     position: relative;
 }
 
-/* ============================================
-   PLAZOS GRID
-   ============================================ */
-
+/* PLAZOS */
 .plazos-grid {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
@@ -542,35 +488,15 @@ body {
     gap: 10px;
 }
 
-.plazo-card.plazo-diario .plazo-header {
-    background: var(--info-light);
-}
-.plazo-card.plazo-semanal .plazo-header {
-    background: var(--warning-light);
-}
-.plazo-card.plazo-quincenal .plazo-header {
-    background: var(--quincenal-light);
-}
-.plazo-card.plazo-mensual .plazo-header {
-    background: var(--success-light);
-}
+.plazo-card.plazo-diario .plazo-header { background: var(--info-light); }
+.plazo-card.plazo-semanal .plazo-header { background: var(--warning-light); }
+.plazo-card.plazo-quincenal .plazo-header { background: var(--quincenal-light); }
+.plazo-card.plazo-mensual .plazo-header { background: var(--success-light); }
 
-.plazo-header i {
-    font-size: 16px;
-}
-
-.plazo-card.plazo-diario .plazo-header i {
-    color: var(--info);
-}
-.plazo-card.plazo-semanal .plazo-header i {
-    color: var(--warning);
-}
-.plazo-card.plazo-quincenal .plazo-header i {
-    color: var(--quincenal);
-}
-.plazo-card.plazo-mensual .plazo-header i {
-    color: var(--success);
-}
+.plazo-card.plazo-diario .plazo-header i { color: var(--info); }
+.plazo-card.plazo-semanal .plazo-header i { color: var(--warning); }
+.plazo-card.plazo-quincenal .plazo-header i { color: var(--quincenal); }
+.plazo-card.plazo-mensual .plazo-header i { color: var(--success); }
 
 .plazo-header h4 {
     font-size: 13px;
@@ -606,10 +532,7 @@ body {
     color: var(--primary);
 }
 
-/* ============================================
-   PROXIMOS VENCIMIENTOS
-   ============================================ */
-
+/* PROXIMOS */
 .proximos-vencimientos {
     max-height: 200px;
     overflow-y: auto;
@@ -632,7 +555,6 @@ body {
 
 .vencimiento-cliente {
     font-weight: 500;
-    color: var(--gray-600);
 }
 
 .vencimiento-fecha {
@@ -649,10 +571,7 @@ body {
     color: var(--danger);
 }
 
-/* ============================================
-   FORMULARIO
-   ============================================ */
-
+/* FORMULARIO */
 .form-moderno {
     display: flex;
     flex-direction: column;
@@ -702,10 +621,7 @@ body {
     box-shadow: 0 0 0 3px rgba(26, 35, 126, 0.1);
 }
 
-/* ============================================
-   BOTONES
-   ============================================ */
-
+/* BOTONES */
 .btn-primario {
     padding: 10px 20px;
     background: var(--primary-gradient);
@@ -746,10 +662,7 @@ body {
     background: var(--gray-200);
 }
 
-/* ============================================
-   FILTROS
-   ============================================ */
-
+/* FILTROS */
 .filtros-plazo {
     display: flex;
     gap: 6px;
@@ -830,12 +743,6 @@ body {
     cursor: pointer;
     font-size: 11px;
     font-weight: 500;
-    transition: var(--transition);
-}
-
-.periodo-btn:hover {
-    border-color: var(--primary);
-    color: var(--primary);
 }
 
 .periodo-btn.active {
@@ -844,10 +751,7 @@ body {
     border-color: var(--primary);
 }
 
-/* ============================================
-   TABLA
-   ============================================ */
-
+/* TABLA */
 .tabla-container {
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
@@ -857,7 +761,7 @@ table {
     width: 100%;
     border-collapse: collapse;
     font-size: 13px;
-    min-width: 700px;
+    min-width: 800px;
 }
 
 th {
@@ -921,10 +825,7 @@ tr:hover td {
     padding: 30px 0;
 }
 
-/* ============================================
-   CALENDARIO
-   ============================================ */
-
+/* CALENDARIO */
 .calendario-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
@@ -941,11 +842,6 @@ tr:hover td {
     align-items: center;
     transition: var(--transition);
     gap: 10px;
-}
-
-.cuota-item:hover {
-    transform: translateX(4px);
-    box-shadow: var(--shadow-sm);
 }
 
 .cuota-item.pagada {
@@ -1003,10 +899,7 @@ tr:hover td {
     color: #f57f17;
 }
 
-/* ============================================
-   REPORTES
-   ============================================ */
-
+/* REPORTES */
 .reportes-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
@@ -1058,10 +951,7 @@ tr:hover td {
     padding: 6px 16px;
 }
 
-/* ============================================
-   NOTIFICACIONES
-   ============================================ */
-
+/* NOTIFICACIONES */
 #notificaciones {
     position: fixed;
     top: 16px;
@@ -1081,30 +971,16 @@ tr:hover td {
     animation: slideIn 0.4s ease;
     font-size: 13px;
     white-space: pre-line;
-    max-height: 300px;
-    overflow-y: auto;
 }
 
-.notificacion.success {
-    border-left-color: var(--success);
-}
-
-.notificacion.error {
-    border-left-color: var(--danger);
-}
-
-.notificacion.warning {
-    border-left-color: var(--warning);
-}
+.notificacion.success { border-left-color: var(--success); }
+.notificacion.error { border-left-color: var(--danger); }
+.notificacion.warning { border-left-color: var(--warning); }
 
 @keyframes slideIn {
     from { transform: translateX(100%); opacity: 0; }
     to { transform: translateX(0); opacity: 1; }
 }
-
-/* ============================================
-   CUOTAS RESTANTES
-   ============================================ */
 
 .cuotas-restantes {
     display: inline-block;
@@ -1121,345 +997,58 @@ tr:hover td {
     color: var(--success);
 }
 
-/* ============================================
-   RESPONSIVE - TABLETS (768px - 1024px)
-   ============================================ */
-
+/* RESPONSIVE */
 @media (max-width: 1024px) {
-    .stats-grid {
-        grid-template-columns: repeat(2, 1fr);
-    }
-    
-    .dashboard-grid {
-        grid-template-columns: 1fr;
-    }
-    
-    .plazos-grid {
-        grid-template-columns: repeat(2, 1fr);
-    }
-    
-    .filtros-avanzados {
-        grid-template-columns: 1fr 1fr;
-    }
-    
-    .stat-number {
-        font-size: 20px;
-    }
-    
-    .calendario-grid {
-        grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-    }
+    .stats-grid { grid-template-columns: repeat(2, 1fr); }
+    .dashboard-grid { grid-template-columns: 1fr; }
+    .plazos-grid { grid-template-columns: repeat(2, 1fr); }
+    .filtros-avanzados { grid-template-columns: 1fr 1fr; }
+    .stat-number { font-size: 20px; }
+    .calendario-grid { grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); }
 }
-
-/* ============================================
-   RESPONSIVE - MÓVILES (menos de 768px)
-   ============================================ */
 
 @media (max-width: 768px) {
     .sidebar {
         transform: translateX(-100%);
         width: 280px;
     }
-    
-    .sidebar.open {
-        transform: translateX(0);
-    }
-    
-    .sidebar-overlay.active {
-        display: block;
-    }
-    
-    .menu-toggle {
-        display: block;
-    }
-    
-    .main-content {
-        margin-left: 0;
-        width: 100%;
-    }
-    
-    .top-header {
-        padding: 10px 14px;
-    }
-    
-    .header-date {
-        display: none;
-    }
-    
-    .breadcrumb {
-        font-size: 13px;
-    }
-    
-    .user-profile span {
-        display: none;
-    }
-    
-    .seccion {
-        padding: 12px;
-    }
-    
-    .stats-grid {
-        grid-template-columns: 1fr 1fr;
-        gap: 10px;
-    }
-    
-    .stat-card {
-        padding: 12px 14px;
-    }
-    
-    .stat-icon {
-        width: 36px;
-        height: 36px;
-        font-size: 16px;
-    }
-    
-    .stat-number {
-        font-size: 18px;
-    }
-    
-    .stat-label {
-        font-size: 10px;
-    }
-    
-    .plazos-grid {
-        grid-template-columns: 1fr 1fr;
-        gap: 10px;
-    }
-    
-    .plazo-count {
-        font-size: 22px;
-    }
-    
-    .plazo-header {
-        padding: 10px 12px;
-    }
-    
-    .plazo-header h4 {
-        font-size: 12px;
-    }
-    
-    .form-row {
-        grid-template-columns: 1fr;
-        gap: 10px;
-    }
-    
-    .form-group input,
-    .form-group select {
-        font-size: 14px;
-        padding: 10px 12px;
-    }
-    
-    .filtros-avanzados {
-        grid-template-columns: 1fr;
-        gap: 10px;
-    }
-    
-    .filtros-plazo {
-        gap: 4px;
-    }
-    
-    .filtro-plazo-btn {
-        font-size: 11px;
-        padding: 4px 10px;
-    }
-    
-    .periodo-buttons {
-        gap: 2px;
-    }
-    
-    .periodo-btn {
-        font-size: 10px;
-        padding: 4px 8px;
-    }
-    
-    .tabla-container {
-        margin: 0 -12px;
-        padding: 0 12px;
-    }
-    
-    table {
-        font-size: 12px;
-        min-width: 600px;
-    }
-    
-    th, td {
-        padding: 8px 10px;
-    }
-    
-    .calendario-grid {
-        grid-template-columns: 1fr;
-    }
-    
-    .cuota-item {
-        flex-direction: column;
-        align-items: stretch;
-        gap: 10px;
-    }
-    
-    .cuota-item .btn-accion {
-        align-self: stretch;
-        justify-content: center;
-    }
-    
-    .reportes-grid {
-        grid-template-columns: 1fr 1fr;
-    }
-    
-    .card {
-        padding: 14px;
-    }
-    
-    .card h3 {
-        font-size: 14px;
-    }
-    
-    .card-header {
-        flex-direction: column;
-        align-items: flex-start;
-    }
-    
-    .card-actions {
-        width: 100%;
-    }
-    
-    .card-actions .btn-secundario {
-        flex: 1;
-        justify-content: center;
-        font-size: 11px;
-        padding: 6px 10px;
-    }
-    
-    #notificaciones {
-        top: 10px;
-        right: 10px;
-        max-width: calc(100% - 20px);
-    }
-    
-    .notificacion {
-        font-size: 12px;
-        padding: 12px 14px;
-    }
-    
-    .chart-container {
-        height: 150px;
-    }
-    
-    .vencimiento-item {
-        font-size: 12px;
-        padding: 6px 8px;
-    }
+    .sidebar.open { transform: translateX(0); }
+    .sidebar-overlay.active { display: block; }
+    .menu-toggle { display: block; }
+    .main-content { margin-left: 0; width: 100%; }
+    .top-header { padding: 10px 14px; }
+    .header-date { display: none; }
+    .user-profile span { display: none; }
+    .seccion { padding: 12px; }
+    .stats-grid { grid-template-columns: 1fr 1fr; gap: 10px; }
+    .stat-card { padding: 12px 14px; }
+    .stat-icon { width: 36px; height: 36px; font-size: 16px; }
+    .stat-number { font-size: 16px; }
+    .plazos-grid { grid-template-columns: 1fr 1fr; gap: 10px; }
+    .form-row { grid-template-columns: 1fr; gap: 10px; }
+    .filtros-avanzados { grid-template-columns: 1fr; }
+    table { font-size: 12px; min-width: 700px; }
+    .calendario-grid { grid-template-columns: 1fr; }
+    .cuota-item { flex-direction: column; align-items: stretch; }
+    .reportes-grid { grid-template-columns: 1fr 1fr; }
+    .card { padding: 14px; }
+    .card-header { flex-direction: column; align-items: flex-start; }
+    .card-actions { width: 100%; }
+    #notificaciones { top: 10px; right: 10px; max-width: calc(100% - 20px); }
+    .chart-container { height: 150px; }
 }
-
-/* ============================================
-   RESPONSIVE - MÓVILES PEQUEÑOS (menos de 480px)
-   ============================================ */
 
 @media (max-width: 480px) {
-    .stats-grid {
-        grid-template-columns: 1fr 1fr;
-        gap: 8px;
-    }
-    
-    .stat-card {
-        padding: 10px 12px;
-        gap: 10px;
-    }
-    
-    .stat-icon {
-        width: 32px;
-        height: 32px;
-        font-size: 14px;
-    }
-    
-    .stat-number {
-        font-size: 16px;
-    }
-    
-    .plazos-grid {
-        grid-template-columns: 1fr 1fr;
-        gap: 8px;
-    }
-    
-    .plazo-count {
-        font-size: 18px;
-    }
-    
-    .plazo-monto {
-        font-size: 12px;
-    }
-    
-    .reportes-grid {
-        grid-template-columns: 1fr;
-    }
-    
-    table {
-        font-size: 11px;
-        min-width: 500px;
-    }
-    
-    th, td {
-        padding: 6px 8px;
-    }
-    
-    .btn-primario {
-        font-size: 13px;
-        padding: 10px 16px;
-    }
-    
-    .btn-accion {
-        font-size: 10px;
-        padding: 3px 6px;
-        min-width: 24px;
-        min-height: 24px;
-    }
-    
-    .top-header {
-        padding: 8px 10px;
-        min-height: 52px;
-    }
-    
-    .breadcrumb {
-        font-size: 12px;
-    }
-    
-    .btn-notificacion {
-        font-size: 16px;
-        padding: 4px;
-    }
-    
-    .badge {
-        width: 16px;
-        height: 16px;
-        font-size: 8px;
-    }
-    
-    .sidebar {
-        width: 260px;
-    }
-    
-    .sidebar-header h2 {
-        font-size: 18px;
-    }
-    
-    .logo-icon {
-        width: 38px;
-        height: 38px;
-        font-size: 18px;
-    }
-    
-    .nav-item {
-        font-size: 13px;
-        padding: 8px 12px;
-    }
-    
-    .cuota-item {
-        padding: 12px 14px;
-    }
+    .stats-grid { grid-template-columns: 1fr 1fr; gap: 8px; }
+    .stat-card { padding: 10px 12px; gap: 10px; }
+    .stat-icon { width: 32px; height: 32px; font-size: 14px; }
+    .stat-number { font-size: 14px; }
+    .plazos-grid { grid-template-columns: 1fr 1fr; gap: 8px; }
+    .plazo-count { font-size: 18px; }
+    .reportes-grid { grid-template-columns: 1fr; }
+    table { font-size: 11px; min-width: 600px; }
+    .btn-accion { font-size: 10px; padding: 3px 6px; min-width: 24px; min-height: 24px; }
 }
-
-/* ============================================
-   SCROLLBAR PERSONALIZADA
-   ============================================ */
 
 ::-webkit-scrollbar {
     width: 6px;
@@ -1468,7 +1057,6 @@ tr:hover td {
 
 ::-webkit-scrollbar-track {
     background: var(--gray-100);
-    border-radius: 3px;
 }
 
 ::-webkit-scrollbar-thumb {
@@ -1476,45 +1064,10 @@ tr:hover td {
     border-radius: 3px;
 }
 
-::-webkit-scrollbar-thumb:hover {
-    background: var(--gray-400);
-}
-
-/* ============================================
-   IMPRESIÓN
-   ============================================ */
-
 @media print {
-    .sidebar,
-    .top-header,
-    .btn-accion,
-    .btn-primario,
-    .btn-secundario,
-    #notificaciones {
+    .sidebar, .top-header, .btn-accion, .btn-primario, .btn-secundario, #notificaciones {
         display: none !important;
     }
-    
-    .main-content {
-        margin-left: 0 !important;
-        width: 100% !important;
-    }
-    
-    .seccion {
-        display: block !important;
-        padding: 20px !important;
-    }
-    
-    .card {
-        box-shadow: none !important;
-        border: 1px solid #ddd !important;
-        break-inside: avoid;
-    }
-    
-    table {
-        font-size: 10px !important;
-    }
-    
-    th {
-        background: #eee !important;
-    }
+    .main-content { margin-left: 0 !important; width: 100% !important; }
+    .seccion { display: block !important; }
 }
