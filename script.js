@@ -1,6 +1,6 @@
 // ==========================================
 // PRESTACONTROL - SISTEMA COMPLETO
-// CON SECCIÓN DE REGISTRO DE PAGOS
+// CON NETLIFY DATABASE (SINCRONIZADO)
 // ==========================================
 
 let clientes = [];
@@ -61,34 +61,264 @@ function calcularInteres(capital, tasa, plazo, tipoPlazo) {
 }
 
 // ==========================================
-// DATOS INICIALES
+// DATOS INICIALES (SOLO SE USAN LA PRIMERA VEZ)
 // ==========================================
 
 function getClientesIniciales() {
     return [
-        { id: 1, nombre: 'Omar', telefono: '', email: '', monto: 3800000, interes: 0, fechaInicio: '2026-01-01', plazo: 0, tipoPlazo: 'sin_definir', saldo: 3800000, diasPago: '', diaFijo: '' },
-        { id: 2, nombre: 'Daniela', telefono: '', email: '', monto: 1400000, interes: 0, fechaInicio: '2026-01-01', plazo: 0, tipoPlazo: 'sin_definir', saldo: 1400000, diasPago: '', diaFijo: '' },
-        { id: 3, nombre: 'Juanchi', telefono: '', email: '', monto: 450000, interes: 0, fechaInicio: '2026-01-01', plazo: 0, tipoPlazo: 'mensual', saldo: 450000, diasPago: '', diaFijo: '' },
-        { id: 4, nombre: 'Lorena Yanez', telefono: '', email: '', monto: 2000000, interes: 5, fechaInicio: '2026-01-01', plazo: 2, tipoPlazo: 'quincenal', saldo: 2000000, diasPago: '16,31', diaFijo: '' },
-        { id: 5, nombre: 'Charo Yanez', telefono: '', email: '', monto: 300000, interes: 3, fechaInicio: '2026-01-01', plazo: 180, tipoPlazo: 'quincenal', saldo: 300000, diasPago: '05,20', diaFijo: '' },
-        { id: 6, nombre: 'Edinzon', telefono: '', email: '', monto: 300000, interes: 20, fechaInicio: '2026-01-01', plazo: 60, tipoPlazo: 'mensual', saldo: 300000, diasPago: '', diaFijo: '28' },
-        { id: 7, nombre: 'Margarita Cotorra', telefono: '', email: '', monto: 500000, interes: 0, fechaInicio: '2026-01-01', plazo: 0, tipoPlazo: 'sin_definir', saldo: 500000, diasPago: '', diaFijo: '' },
-        { id: 8, nombre: 'Señor 26 Papi', telefono: '', email: '', monto: 300000, interes: 20, fechaInicio: '2026-01-01', plazo: 60, tipoPlazo: 'mensual', saldo: 300000, diasPago: '', diaFijo: '26' },
-        { id: 9, nombre: 'Señor Mecanico', telefono: '', email: '', monto: 200000, interes: 0, fechaInicio: '2026-01-01', plazo: 0, tipoPlazo: 'semanal', saldo: 200000, diasPago: '', diaFijo: '' },
-        { id: 10, nombre: 'Primo Mecanico', telefono: '', email: '', monto: 150000, interes: 0, fechaInicio: '2026-01-01', plazo: 0, tipoPlazo: 'semanal', saldo: 150000, diasPago: '', diaFijo: '' },
-        { id: 11, nombre: 'Claudia German', telefono: '', email: '', monto: 1000000, interes: 0, fechaInicio: '2026-01-01', plazo: 0, tipoPlazo: 'sin_definir', saldo: 1000000, diasPago: '', diaFijo: '' },
-        { id: 12, nombre: 'Rosmira', telefono: '', email: '', monto: 700000, interes: 0, fechaInicio: '2026-01-01', plazo: 0, tipoPlazo: 'sin_definir', saldo: 700000, diasPago: '', diaFijo: '' },
-        { id: 13, nombre: 'Juanchi Nequi', telefono: '', email: '', monto: 300000, interes: 0, fechaInicio: '2026-01-01', plazo: 0, tipoPlazo: 'sin_definir', saldo: 300000, diasPago: '', diaFijo: '' },
-        { id: 14, nombre: 'Yulieth', telefono: '', email: '', monto: 200000, interes: 0, fechaInicio: '2026-01-01', plazo: 0, tipoPlazo: 'sin_definir', saldo: 200000, diasPago: '', diaFijo: '' }
+        { nombre: 'Omar', telefono: '', email: '', monto: 3800000, interes: 0, fechaInicio: '2026-01-01', plazo: 0, tipoPlazo: 'sin_definir', saldo: 3800000, diasPago: '', diaFijo: '' },
+        { nombre: 'Daniela', telefono: '', email: '', monto: 1400000, interes: 0, fechaInicio: '2026-01-01', plazo: 0, tipoPlazo: 'sin_definir', saldo: 1400000, diasPago: '', diaFijo: '' },
+        { nombre: 'Juanchi', telefono: '', email: '', monto: 450000, interes: 0, fechaInicio: '2026-01-01', plazo: 0, tipoPlazo: 'mensual', saldo: 450000, diasPago: '', diaFijo: '' },
+        { nombre: 'Lorena Yanez', telefono: '', email: '', monto: 2000000, interes: 5, fechaInicio: '2026-01-01', plazo: 2, tipoPlazo: 'quincenal', saldo: 2000000, diasPago: '16,31', diaFijo: '' },
+        { nombre: 'Charo Yanez', telefono: '', email: '', monto: 300000, interes: 3, fechaInicio: '2026-01-01', plazo: 180, tipoPlazo: 'quincenal', saldo: 300000, diasPago: '05,20', diaFijo: '' },
+        { nombre: 'Edinzon', telefono: '', email: '', monto: 300000, interes: 20, fechaInicio: '2026-01-01', plazo: 60, tipoPlazo: 'mensual', saldo: 300000, diasPago: '', diaFijo: '28' },
+        { nombre: 'Margarita Cotorra', telefono: '', email: '', monto: 500000, interes: 0, fechaInicio: '2026-01-01', plazo: 0, tipoPlazo: 'sin_definir', saldo: 500000, diasPago: '', diaFijo: '' },
+        { nombre: 'Señor 26 Papi', telefono: '', email: '', monto: 300000, interes: 20, fechaInicio: '2026-01-01', plazo: 60, tipoPlazo: 'mensual', saldo: 300000, diasPago: '', diaFijo: '26' },
+        { nombre: 'Señor Mecanico', telefono: '', email: '', monto: 200000, interes: 0, fechaInicio: '2026-01-01', plazo: 0, tipoPlazo: 'semanal', saldo: 200000, diasPago: '', diaFijo: '' },
+        { nombre: 'Primo Mecanico', telefono: '', email: '', monto: 150000, interes: 0, fechaInicio: '2026-01-01', plazo: 0, tipoPlazo: 'semanal', saldo: 150000, diasPago: '', diaFijo: '' },
+        { nombre: 'Claudia German', telefono: '', email: '', monto: 1000000, interes: 0, fechaInicio: '2026-01-01', plazo: 0, tipoPlazo: 'sin_definir', saldo: 1000000, diasPago: '', diaFijo: '' },
+        { nombre: 'Rosmira', telefono: '', email: '', monto: 700000, interes: 0, fechaInicio: '2026-01-01', plazo: 0, tipoPlazo: 'sin_definir', saldo: 700000, diasPago: '', diaFijo: '' },
+        { nombre: 'Juanchi Nequi', telefono: '', email: '', monto: 300000, interes: 0, fechaInicio: '2026-01-01', plazo: 0, tipoPlazo: 'sin_definir', saldo: 300000, diasPago: '', diaFijo: '' },
+        { nombre: 'Yulieth', telefono: '', email: '', monto: 200000, interes: 0, fechaInicio: '2026-01-01', plazo: 0, tipoPlazo: 'sin_definir', saldo: 200000, diasPago: '', diaFijo: '' }
     ];
+}
+
+// ==========================================
+// API - BASE DE DATOS
+// ==========================================
+
+async function apiGet(url) {
+    const res = await fetch(url);
+    return await res.json();
+}
+
+async function apiPost(url, data) {
+    const res = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+    });
+    return await res.json();
+}
+
+async function apiPut(url, data) {
+    const res = await fetch(url, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+    });
+    return await res.json();
+}
+
+async function apiDelete(url) {
+    const res = await fetch(url, { method: 'DELETE' });
+    return await res.json();
+}
+
+// ==========================================
+// CONVERSIÓN DE DATOS (BD <-> JS)
+// ==========================================
+
+function clienteDesdeBD(c) {
+    return {
+        id: parseInt(c.id),
+        nombre: c.nombre,
+        telefono: c.telefono || '',
+        email: c.email || '',
+        monto: parseFloat(c.monto) || 0,
+        interes: parseFloat(c.interes) || 0,
+        montoTotal: parseFloat(c.monto_total) || parseFloat(c.monto) || 0,
+        interesTotal: parseFloat(c.interes_total) || 0,
+        fechaInicio: c.fecha_inicio ? c.fecha_inicio.split('T')[0] : '',
+        tipoPlazo: c.tipo_plazo || 'sin_definir',
+        plazo: parseInt(c.plazo) || 0,
+        saldo: parseFloat(c.saldo) || 0,
+        diasPago: c.dias_pago || '',
+        diaFijo: c.dia_fijo || ''
+    };
+}
+
+function clienteParaBD(c) {
+    return {
+        nombre: c.nombre,
+        telefono: c.telefono || '',
+        email: c.email || '',
+        monto: c.monto,
+        interes: c.interes || 0,
+        montoTotal: c.montoTotal || c.monto,
+        interesTotal: c.interesTotal || 0,
+        fechaInicio: c.fechaInicio,
+        tipoPlazo: c.tipoPlazo,
+        plazo: c.plazo || 0,
+        saldo: c.saldo || c.monto,
+        diasPago: c.diasPago || '',
+        diaFijo: c.diaFijo || null
+    };
+}
+
+function cuotaDesdeBD(c) {
+    return {
+        id: parseInt(c.id),
+        clienteId: parseInt(c.cliente_id),
+        clienteNombre: c.cliente_nombre,
+        fecha: c.fecha ? c.fecha.split('T')[0] : '',
+        monto: parseFloat(c.monto) || 0,
+        estado: c.estado || 'pendiente',
+        fechaPago: c.fecha_pago ? c.fecha_pago.split('T')[0] : null,
+        montoPagado: parseFloat(c.monto_pagado) || 0
+    };
+}
+
+function pagoDesdeBD(p) {
+    return {
+        id: parseInt(p.id),
+        clienteId: parseInt(p.cliente_id),
+        clienteNombre: p.cliente_nombre,
+        monto: parseFloat(p.monto) || 0,
+        fecha: p.fecha ? p.fecha.split('T')[0] : '',
+        hora: p.hora || '',
+        nota: p.nota || '',
+        saldoAnterior: parseFloat(p.saldo_anterior) || 0,
+        saldoRestante: parseFloat(p.saldo_restante) || 0,
+        editado: p.editado || false
+    };
+}
+
+// ==========================================
+// CARGA DE DATOS DESDE LA NUBE
+// ==========================================
+
+async function cargarDatosLocales() {
+    try {
+        console.log('🔄 Cargando datos desde Netlify Database...');
+        
+        // Cargar clientes
+        const dataClientes = await apiGet('/api/clientes');
+        clientes = (dataClientes.clientes || []).map(clienteDesdeBD);
+        
+        // Cargar cuotas
+        const dataCuotas = await apiGet('/api/cuotas');
+        cuotas = (dataCuotas.cuotas || []).map(cuotaDesdeBD);
+        
+        // Cargar pagos
+        const dataPagos = await apiGet('/api/pagos');
+        historialPagos = (dataPagos.pagos || []).map(pagoDesdeBD);
+        
+        // Si no hay clientes, cargar los iniciales
+        if (clientes.length === 0) {
+            console.log('⚠️ Base de datos vacía. Cargando clientes iniciales...');
+            const iniciales = getClientesIniciales();
+            for (const cli of iniciales) {
+                const resultado = await apiPost('/api/clientes', clienteParaBD(cli));
+                if (resultado.cliente) {
+                    const nuevoCliente = clienteDesdeBD(resultado.cliente);
+                    clientes.push(nuevoCliente);
+                    
+                    // Generar cuotas si tiene plazo
+                    if (nuevoCliente.tipoPlazo !== 'sin_definir' && nuevoCliente.plazo > 0) {
+                        await generarCuotasEnBD(nuevoCliente);
+                    }
+                }
+            }
+            // Recargar cuotas
+            const dataCuotas2 = await apiGet('/api/cuotas');
+            cuotas = (dataCuotas2.cuotas || []).map(cuotaDesdeBD);
+        }
+        
+        console.log(`✅ Datos cargados: ${clientes.length} clientes, ${cuotas.length} cuotas, ${historialPagos.length} pagos`);
+        
+    } catch (error) {
+        console.error('❌ Error cargando datos:', error);
+        mostrarNotificacion('Error al conectar con la base de datos', 'error');
+        clientes = [];
+        cuotas = [];
+        historialPagos = [];
+    }
+}
+
+// ==========================================
+// GENERAR CUOTAS EN BD
+// ==========================================
+
+async function generarCuotasEnBD(cliente) {
+    if (cliente.tipoPlazo === 'sin_definir' || cliente.plazo <= 0) return;
+    
+    let montoTotal = cliente.monto;
+    if (cliente.interes && cliente.interes > 0) {
+        const resultado = calcularInteres(cliente.monto, cliente.interes, cliente.plazo, cliente.tipoPlazo);
+        montoTotal = resultado.montoTotal;
+    }
+    
+    const cuotaMensual = montoTotal / cliente.plazo;
+    const fechaInicio = new Date(cliente.fechaInicio);
+    
+    let diaFijo = cliente.diaFijo ? parseInt(cliente.diaFijo) : null;
+    let diasPago = cliente.diasPago ? cliente.diasPago.split(',').map(d => parseInt(d.trim())) : [];
+    
+    for (let i = 1; i <= cliente.plazo; i++) {
+        const fechaCuota = new Date(fechaInicio);
+        
+        switch(cliente.tipoPlazo) {
+            case 'diario':
+                fechaCuota.setDate(fechaCuota.getDate() + i);
+                break;
+            case 'semanal':
+                fechaCuota.setDate(fechaCuota.getDate() + (i * 7));
+                break;
+            case 'quincenal':
+                if (diasPago.length > 0) {
+                    const mes = fechaCuota.getMonth();
+                    const anio = fechaCuota.getFullYear();
+                    const diaIndex = (i - 1) % diasPago.length;
+                    let dia = diasPago[diaIndex];
+                    const ultimoDia = new Date(anio, mes + 1, 0).getDate();
+                    if (dia > ultimoDia) dia = ultimoDia;
+                    fechaCuota.setDate(dia);
+                    if (i > 1 && diaIndex === 0) fechaCuota.setMonth(fechaCuota.getMonth() + 1);
+                } else {
+                    fechaCuota.setDate(fechaCuota.getDate() + (i * 15));
+                }
+                break;
+            case 'mensual':
+            case 'personalizado':
+                if (diaFijo) {
+                    fechaCuota.setMonth(fechaCuota.getMonth() + i);
+                    const ultimoDia = new Date(fechaCuota.getFullYear(), fechaCuota.getMonth() + 1, 0).getDate();
+                    fechaCuota.setDate(Math.min(diaFijo, ultimoDia));
+                } else if (diasPago.length > 0) {
+                    const mes = fechaCuota.getMonth();
+                    const anio = fechaCuota.getFullYear();
+                    const diaIndex = (i - 1) % diasPago.length;
+                    let dia = diasPago[diaIndex];
+                    const ultimoDia = new Date(anio, mes + 1, 0).getDate();
+                    if (dia > ultimoDia) dia = ultimoDia;
+                    fechaCuota.setDate(dia);
+                    if (i > 1 && diaIndex === 0) fechaCuota.setMonth(fechaCuota.getMonth() + 1);
+                } else {
+                    fechaCuota.setMonth(fechaCuota.getMonth() + i);
+                }
+                break;
+        }
+        
+        const fechaCuotaStr = fechaCuota.toISOString().split('T')[0];
+        
+        await apiPost('/api/cuotas', {
+            clienteId: cliente.id,
+            clienteNombre: cliente.nombre,
+            fecha: fechaCuotaStr,
+            monto: parseFloat(cuotaMensual.toFixed(2)),
+            estado: 'pendiente'
+        });
+    }
 }
 
 // ==========================================
 // INICIALIZACIÓN
 // ==========================================
 
-document.addEventListener('DOMContentLoaded', function() {
-    cargarDatosLocales();
+document.addEventListener('DOMContentLoaded', async function() {
+    await cargarDatosLocales();
+    renderizarTodo();
     
     const fechaInicio = document.getElementById('fechaInicio');
     if (fechaInicio) fechaInicio.value = new Date().toISOString().split('T')[0];
@@ -120,7 +350,6 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
-    // Previsualización del interés
     const montoInput = document.getElementById('monto');
     const interesInput = document.getElementById('interes');
     const plazoInput = document.getElementById('plazo');
@@ -139,7 +368,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const resultado = calcularInteres(capital, tasa, plazo, tipo);
             previewEl.innerHTML = `
                 <div style="background:#e8f5e9;padding:8px 12px;border-radius:8px;font-size:12px;line-height:1.6;">
-                    <strong style="color:#2e7d32;">📊 Previsualización</strong><br>
+                    <strong style="color:#2e7d32;">Previsualización</strong><br>
                     <span>Capital: ${formatoCOP(capital)}</span><br>
                     <span>Interés: ${tasa}%</span><br>
                     <span style="color:#2e7d32;font-weight:600;">Ganancia: ${formatoCOP(resultado.interesTotal)}</span><br>
@@ -156,81 +385,31 @@ document.addEventListener('DOMContentLoaded', function() {
     if (plazoInput) plazoInput.addEventListener('input', previsualizarInteres);
     if (tipoPlazoSelect) tipoPlazoSelect.addEventListener('change', previsualizarInteres);
     
-    renderizarTodo();
     setTimeout(verificarAtrasos, 1500);
 });
 
 // ==========================================
-// CARGA DE DATOS
-// ==========================================
-
-function cargarDatosLocales() {
-    try {
-        const clientesGuardados = localStorage.getItem('clientes');
-        const cuotasGuardadas = localStorage.getItem('cuotas');
-        const historialGuardado = localStorage.getItem('historialPagos');
-        
-        if (clientesGuardados && clientesGuardados !== '[]') {
-            clientes = JSON.parse(clientesGuardados);
-            clientes.forEach(c => { if (c.interes === undefined) c.interes = 0; });
-        } else {
-            clientes = getClientesIniciales();
-            guardarClientes();
-        }
-        
-        if (cuotasGuardadas && cuotasGuardadas !== '[]') {
-            cuotas = JSON.parse(cuotasGuardadas);
-        } else {
-            cuotas = [];
-            clientes.forEach(cliente => {
-                if (cliente.tipoPlazo !== 'sin_definir' && cliente.plazo > 0) {
-                    generarCuotasCliente(cliente);
-                }
-            });
-            guardarCuotas();
-        }
-        
-        if (historialGuardado && historialGuardado !== '[]') {
-            historialPagos = JSON.parse(historialGuardado);
-        } else {
-            historialPagos = [];
-            guardarHistorial();
-        }
-    } catch (error) {
-        console.error('Error cargando datos:', error);
-        clientes = getClientesIniciales();
-        cuotas = [];
-        historialPagos = [];
-        guardarClientes();
-        guardarCuotas();
-        guardarHistorial();
-    }
-}
-
-// ==========================================
-// GUARDADO
+// FUNCIONES DE GUARDADO (YA NO USAN LOCALSTORAGE)
 // ==========================================
 
 function guardarClientes() {
-    localStorage.setItem('clientes', JSON.stringify(clientes));
     actualizarEstadisticas();
     actualizarPlazos();
 }
 
 function guardarCuotas() {
-    localStorage.setItem('cuotas', JSON.stringify(cuotas));
     actualizarEstadisticas();
 }
 
 function guardarHistorial() {
-    localStorage.setItem('historialPagos', JSON.stringify(historialPagos));
+    // Los pagos se guardan directamente
 }
 
 // ==========================================
-// REGISTRAR PAGO (NUEVA FUNCIÓN)
+// REGISTRAR PAGO
 // ==========================================
 
-function registrarPago(event) {
+async function registrarPago(event) {
     event.preventDefault();
     
     const clienteId = parseInt(document.getElementById('pagoCliente').value);
@@ -254,23 +433,28 @@ function registrarPago(event) {
         return;
     }
     
-    // Registrar el pago
-    const registro = {
-        id: Date.now(),
+    const saldoAnterior = cliente.saldo;
+    const saldoRestante = cliente.saldo - monto;
+    
+    // Registrar el pago en la base de datos
+    const resultado = await apiPost('/api/pagos', {
         clienteId: cliente.id,
         clienteNombre: cliente.nombre,
         monto: monto,
         fecha: fecha,
         hora: new Date().toLocaleTimeString('es-ES'),
         nota: nota,
-        saldoAnterior: cliente.saldo,
-        saldoRestante: cliente.saldo - monto
-    };
+        saldoAnterior: saldoAnterior,
+        saldoRestante: saldoRestante
+    });
     
-    historialPagos.push(registro);
+    if (resultado.pago) {
+        historialPagos.unshift(pagoDesdeBD(resultado.pago));
+    }
     
-    // Descontar del saldo
-    cliente.saldo = parseFloat((cliente.saldo - monto).toFixed(2));
+    // Actualizar saldo del cliente en la BD
+    cliente.saldo = saldoRestante;
+    await apiPut('/api/clientes', clienteParaBD(cliente));
     
     // Marcar cuota como pagada
     const cuotaPendiente = cuotas
@@ -278,20 +462,21 @@ function registrarPago(event) {
         .sort((a, b) => a.fecha.localeCompare(b.fecha))[0];
     
     if (cuotaPendiente) {
+        await apiPut('/api/cuotas', {
+            id: cuotaPendiente.id,
+            estado: 'pagada',
+            fechaPago: fecha,
+            montoPagado: monto
+        });
         cuotaPendiente.estado = 'pagada';
         cuotaPendiente.fechaPago = fecha;
         cuotaPendiente.montoPagado = monto;
     }
     
-    guardarClientes();
-    guardarCuotas();
-    guardarHistorial();
-    
-    // Calcular info actualizada
     const cuotasRestantes = cuotas.filter(c => c.clienteId === cliente.id && c.estado !== 'pagada').length;
     const cuotasPagadas = cuotas.filter(c => c.clienteId === cliente.id && c.estado === 'pagada').length;
     
-    let mensaje = `💵 Pago registrado\n`;
+    let mensaje = `Pago registrado\n`;
     mensaje += `Cliente: ${cliente.nombre}\n`;
     mensaje += `Monto: ${formatoCOP(monto)}\n`;
     mensaje += `Saldo restante: ${formatoCOP(cliente.saldo)}\n`;
@@ -300,10 +485,9 @@ function registrarPago(event) {
     mostrarNotificacion(mensaje, 'success');
     
     if (cliente.saldo <= 0) {
-        mostrarNotificacion(`🎉 ¡${cliente.nombre} ha saldado su deuda!`, 'success');
+        mostrarNotificacion(`¡${cliente.nombre} ha saldado su deuda!`, 'success');
     }
     
-    // Limpiar formulario
     document.getElementById('formPago').reset();
     document.getElementById('pagoFecha').value = new Date().toISOString().split('T')[0];
     document.getElementById('infoPagoCliente').style.display = 'none';
@@ -334,7 +518,6 @@ function actualizarInfoPago() {
     const pagadas = cuotasCliente.filter(c => c.estado === 'pagada').length;
     const restantes = cuotasCliente.length - pagadas;
     
-    // Calcular ganancia
     let ganancia = 0;
     let montoTotal = cliente.monto;
     if (cliente.interes > 0 && cliente.plazo > 0 && cliente.tipoPlazo !== 'sin_definir') {
@@ -343,7 +526,6 @@ function actualizarInfoPago() {
         montoTotal = resultado.montoTotal;
     }
     
-    // Calcular ganancia realizada (proporcional a lo pagado)
     const pagado = montoTotal - cliente.saldo;
     const gananciaRealizada = montoTotal > 0 ? (pagado / montoTotal) * ganancia : 0;
     
@@ -388,7 +570,6 @@ function actualizarInfoPago() {
         </div>
     `;
     
-    // Pre-llenar el monto con la próxima cuota
     const proximaCuota = cuotas
         .filter(c => c.clienteId === clienteId && c.estado !== 'pagada')
         .sort((a, b) => a.fecha.localeCompare(b.fecha))[0];
@@ -438,7 +619,6 @@ function renderizarResumenPorCliente() {
         const total = cuotasCliente.length;
         const restantes = total - pagadas;
         
-        // Calcular ganancias
         let ganancia = 0;
         let montoTotal = cliente.monto;
         if (cliente.interes > 0 && cliente.plazo > 0 && cliente.tipoPlazo !== 'sin_definir') {
@@ -494,7 +674,7 @@ function renderizarHistorialPagos() {
         pagos = pagos.filter(p => p.clienteId === parseInt(clienteId));
     }
     
-    pagos.sort((a, b) => b.id - a.id); // Más recientes primero
+    pagos.sort((a, b) => b.id - a.id);
     
     if (pagos.length === 0) {
         container.innerHTML = '<p class="texto-centrado">No hay pagos registrados</p>';
@@ -511,18 +691,23 @@ function renderizarHistorialPagos() {
                     <th>Saldo Anterior</th>
                     <th>Saldo Restante</th>
                     <th>Nota</th>
+                    <th>Acciones</th>
                 </tr>
             </thead>
             <tbody>
     `;
     
     pagos.forEach(pago => {
+        const editado = pago.editado ? 
+            '<span style="font-size:10px;color:#e65100;background:#fff3e0;padding:2px 6px;border-radius:8px;margin-left:4px;">EDITADO</span>' : '';
+        
         html += `
             <tr>
                 <td>
                     <div style="display:flex;flex-direction:column;">
                         <strong>${formatearFecha(pago.fecha)}</strong>
                         <span style="font-size:11px;color:var(--gray-400);">${pago.hora || ''}</span>
+                        ${editado}
                     </div>
                 </td>
                 <td><strong>${pago.clienteNombre}</strong></td>
@@ -530,12 +715,176 @@ function renderizarHistorialPagos() {
                 <td style="color:var(--gray-500);">${formatoCOP(pago.saldoAnterior || 0)}</td>
                 <td style="color:var(--warning);font-weight:600;">${formatoCOP(pago.saldoRestante)}</td>
                 <td style="font-size:12px;color:var(--gray-400);">${pago.nota || '—'}</td>
+                <td>
+                    <div style="display:flex;gap:4px;">
+                        <button onclick="editarPago(${pago.id})" class="btn-accion" style="background:var(--info-light);color:var(--info);" title="Editar pago">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button onclick="eliminarPago(${pago.id})" class="btn-accion eliminar" title="Eliminar pago">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                </td>
             </tr>
         `;
     });
     
     html += `</tbody></table>`;
     container.innerHTML = html;
+}
+
+// ==========================================
+// EDITAR PAGO
+// ==========================================
+
+async function editarPago(pagoId) {
+    const pago = historialPagos.find(p => p.id === pagoId);
+    if (!pago) {
+        mostrarNotificacion('Pago no encontrado', 'error');
+        return;
+    }
+    
+    const cliente = clientes.find(c => c.id === pago.clienteId);
+    if (!cliente) {
+        mostrarNotificacion('Cliente no encontrado', 'error');
+        return;
+    }
+    
+    const nuevoMontoInput = prompt(
+        `EDITAR PAGO\n\n` +
+        `Cliente: ${pago.clienteNombre}\n` +
+        `Monto actual: ${formatoCOP(pago.monto)}\n` +
+        `Fecha: ${formatearFecha(pago.fecha)}\n\n` +
+        `Ingresa el NUEVO monto:`,
+        Math.round(pago.monto)
+    );
+    
+    if (nuevoMontoInput === null) return;
+    
+    const nuevoMonto = parseFloat(nuevoMontoInput.replace(/[^0-9.]/g, ''));
+    if (isNaN(nuevoMonto) || nuevoMonto <= 0) {
+        mostrarNotificacion('Monto inválido', 'error');
+        return;
+    }
+    
+    const nuevaFecha = prompt(`Nueva fecha (AAAA-MM-DD):`, pago.fecha);
+    if (nuevaFecha === null) return;
+    
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(nuevaFecha)) {
+        mostrarNotificacion('Formato de fecha inválido', 'error');
+        return;
+    }
+    
+    const nuevaNota = prompt(`Nueva nota (opcional):`, pago.nota || '');
+    if (nuevaNota === null) return;
+    
+    const diferenciaMonto = nuevoMonto - pago.monto;
+    const saldoDisponible = cliente.saldo + pago.monto;
+    
+    if (nuevoMonto > saldoDisponible) {
+        mostrarNotificacion(`El monto (${formatoCOP(nuevoMonto)}) supera el disponible (${formatoCOP(saldoDisponible)})`, 'error');
+        return;
+    }
+    
+    const montoAnterior = pago.monto;
+    
+    // Actualizar pago en BD
+    await apiPut('/api/pagos', {
+        id: pago.id,
+        monto: nuevoMonto,
+        fecha: nuevaFecha,
+        nota: nuevaNota,
+        saldoRestante: pago.saldoAnterior - nuevoMonto
+    });
+    
+    // Actualizar saldo del cliente
+    cliente.saldo = parseFloat((cliente.saldo - diferenciaMonto).toFixed(2));
+    await apiPut('/api/clientes', clienteParaBD(cliente));
+    
+    // Actualizar objeto local
+    pago.monto = nuevoMonto;
+    pago.fecha = nuevaFecha;
+    pago.nota = nuevaNota;
+    pago.saldoRestante = pago.saldoAnterior - nuevoMonto;
+    pago.editado = true;
+    
+    mostrarNotificacion(
+        `Pago actualizado\n` +
+        `Antes: ${formatoCOP(montoAnterior)}\n` +
+        `Ahora: ${formatoCOP(nuevoMonto)}\n` +
+        `Saldo cliente: ${formatoCOP(cliente.saldo)}`,
+        'success'
+    );
+    
+    renderizarTodo();
+}
+
+// ==========================================
+// ELIMINAR PAGO
+// ==========================================
+
+async function eliminarPago(pagoId) {
+    const pago = historialPagos.find(p => p.id === pagoId);
+    if (!pago) {
+        mostrarNotificacion('Pago no encontrado', 'error');
+        return;
+    }
+    
+    const cliente = clientes.find(c => c.id === pago.clienteId);
+    if (!cliente) {
+        mostrarNotificacion('Cliente no encontrado', 'error');
+        return;
+    }
+    
+    if (!confirm(
+        `¿ELIMINAR ESTE PAGO?\n\n` +
+        `Cliente: ${pago.clienteNombre}\n` +
+        `Monto: ${formatoCOP(pago.monto)}\n` +
+        `Fecha: ${formatearFecha(pago.fecha)}\n\n` +
+        `El saldo del cliente se aumentará nuevamente.`
+    )) return;
+    
+    // Devolver el monto al saldo del cliente
+    cliente.saldo = parseFloat((cliente.saldo + pago.monto).toFixed(2));
+    await apiPut('/api/clientes', clienteParaBD(cliente));
+    
+    // Eliminar el pago de la BD
+    await apiDelete(`/api/pagos?id=${pagoId}`);
+    
+    // Revertir cuota
+    const cuotasCliente = cuotas.filter(c => 
+        c.clienteId === cliente.id && 
+        c.estado === 'pagada' &&
+        c.fechaPago === pago.fecha
+    );
+    
+    if (cuotasCliente.length > 0) {
+        const cuotaCoincidente = cuotasCliente.find(c => 
+            Math.abs((c.montoPagado || c.monto) - pago.monto) < 1
+        );
+        
+        if (cuotaCoincidente) {
+            await apiPut('/api/cuotas', {
+                id: cuotaCoincidente.id,
+                estado: 'pendiente',
+                fechaPago: null,
+                montoPagado: null
+            });
+        }
+    }
+    
+    // Eliminar del array local
+    historialPagos = historialPagos.filter(p => p.id !== pagoId);
+    cuotas = cuotas.filter(c => !(c.fechaPago === pago.fecha && Math.abs((c.montoPagado || c.monto) - pago.monto) < 1));
+    
+    mostrarNotificacion(
+        `Pago eliminado\n` +
+        `Se devolvieron ${formatoCOP(pago.monto)} al saldo\n` +
+        `Nuevo saldo: ${formatoCOP(cliente.saldo)}`,
+        'success'
+    );
+    
+    renderizarTodo();
 }
 
 // ==========================================
@@ -637,7 +986,7 @@ function editarCliente(id) {
         if (campos.monto) campos.monto.dispatchEvent(new Event('input'));
         
         document.getElementById('seccion-clientes').scrollIntoView({ behavior: 'smooth' });
-        mostrarNotificacion(`✏️ Editando: ${cliente.nombre}`, 'warning');
+        mostrarNotificacion(`Editando: ${cliente.nombre}`, 'warning');
     } catch (error) {
         console.error('Error:', error);
         mostrarNotificacion('Error al cargar cliente', 'error');
@@ -665,10 +1014,10 @@ function cancelarEdicion() {
 }
 
 // ==========================================
-// GUARDAR CLIENTE
+// GUARDAR CLIENTE (CREAR O EDITAR)
 // ==========================================
 
-function guardarCliente(event) {
+async function guardarCliente(event) {
     event.preventDefault();
     
     const clienteId = document.getElementById('clienteId');
@@ -716,6 +1065,7 @@ function guardarCliente(event) {
     }
     
     if (id) {
+        // EDITAR
         const clienteExistente = clientes.find(c => c.id === parseInt(id));
         if (!clienteExistente) {
             mostrarNotificacion('Cliente no encontrado', 'error');
@@ -725,33 +1075,43 @@ function guardarCliente(event) {
         const cuotasPagadas = cuotas.filter(c => c.clienteId === clienteExistente.id && c.estado === 'pagada');
         const totalPagado = cuotasPagadas.reduce((sum, c) => sum + c.monto, 0);
         
-        clienteExistente.nombre = nombreVal;
-        clienteExistente.telefono = telefonoVal || '—';
-        clienteExistente.monto = montoVal;
-        clienteExistente.interes = interesVal;
-        clienteExistente.montoTotal = montoTotal;
-        clienteExistente.interesTotal = interesTotal;
-        clienteExistente.fechaInicio = fechaInicioVal;
-        clienteExistente.tipoPlazo = tipoPlazoVal;
-        clienteExistente.plazo = plazoVal;
-        clienteExistente.diasPago = diasPagoVal || '';
-        clienteExistente.diaFijo = diaFijoVal || '';
-        clienteExistente.saldo = montoTotal - totalPagado;
+        const clienteActualizado = {
+            ...clienteExistente,
+            nombre: nombreVal,
+            telefono: telefonoVal || '—',
+            monto: montoVal,
+            interes: interesVal,
+            montoTotal: montoTotal,
+            interesTotal: interesTotal,
+            fechaInicio: fechaInicioVal,
+            tipoPlazo: tipoPlazoVal,
+            plazo: plazoVal,
+            diasPago: diasPagoVal || '',
+            diaFijo: diaFijoVal || '',
+            saldo: montoTotal - totalPagado
+        };
         
-        guardarClientes();
+        await apiPut('/api/clientes', { ...clienteParaBD(clienteActualizado), id: clienteExistente.id });
         
+        // Actualizar objeto local
+        Object.assign(clienteExistente, clienteActualizado);
+        
+        // Eliminar cuotas antiguas y regenerar
+        await apiDelete(`/api/cuotas?clienteId=${clienteExistente.id}`);
         cuotas = cuotas.filter(c => c.clienteId !== clienteExistente.id);
-        if (tipoPlazoVal !== 'sin_definir' && plazoVal > 0) {
-            generarCuotasCliente(clienteExistente);
-        }
-        guardarCuotas();
         
-        mostrarNotificacion(`✅ Cliente "${nombreVal}" actualizado`, 'success');
+        if (tipoPlazoVal !== 'sin_definir' && plazoVal > 0) {
+            await generarCuotasEnBD(clienteExistente);
+            const dataCuotas = await apiGet('/api/cuotas');
+            cuotas = (dataCuotas.cuotas || []).map(cuotaDesdeBD);
+        }
+        
+        mostrarNotificacion(`Cliente "${nombreVal}" actualizado`, 'success');
         cancelarEdicion();
         
     } else {
+        // CREAR
         const nuevoCliente = {
-            id: Date.now(),
             nombre: nombreVal,
             telefono: telefonoVal || '—',
             email: '',
@@ -767,122 +1127,43 @@ function guardarCliente(event) {
             diaFijo: diaFijoVal || ''
         };
         
-        clientes.push(nuevoCliente);
-        guardarClientes();
+        const resultado = await apiPost('/api/clientes', clienteParaBD(nuevoCliente));
         
-        if (tipoPlazoVal !== 'sin_definir' && plazoVal > 0) {
-            generarCuotasCliente(nuevoCliente);
-            guardarCuotas();
+        if (resultado.cliente) {
+            const clienteCreado = clienteDesdeBD(resultado.cliente);
+            clientes.push(clienteCreado);
+            
+            if (tipoPlazoVal !== 'sin_definir' && plazoVal > 0) {
+                await generarCuotasEnBD(clienteCreado);
+                const dataCuotas = await apiGet('/api/cuotas');
+                cuotas = (dataCuotas.cuotas || []).map(cuotaDesdeBD);
+            }
+            
+            if (formCliente) formCliente.reset();
+            if (fechaInicio) fechaInicio.value = new Date().toISOString().split('T')[0];
+            if (campoDiasPago) campoDiasPago.style.display = 'none';
+            if (previewInteres) previewInteres.innerHTML = '';
+            
+            let mensaje = `"${nombreVal}" agregado con ${formatoCOP(montoVal)}`;
+            if (interesVal > 0) {
+                mensaje += `\nGanancia: ${formatoCOP(interesTotal)}`;
+                mensaje += `\nTotal a cobrar: ${formatoCOP(montoTotal)}`;
+            }
+            mostrarNotificacion(mensaje, 'success');
         }
-        
-        if (formCliente) formCliente.reset();
-        if (fechaInicio) fechaInicio.value = new Date().toISOString().split('T')[0];
-        if (campoDiasPago) campoDiasPago.style.display = 'none';
-        if (previewInteres) previewInteres.innerHTML = '';
-        
-        let mensaje = `✅ "${nombreVal}" agregado con ${formatoCOP(montoVal)}`;
-        if (interesVal > 0) {
-            mensaje += `\n💰 Ganancia: ${formatoCOP(interesTotal)}`;
-            mensaje += `\n📊 Total a cobrar: ${formatoCOP(montoTotal)}`;
-        }
-        mostrarNotificacion(mensaje, 'success');
     }
     
     renderizarTodo();
 }
 
 // ==========================================
-// GENERAR CUOTAS
-// ==========================================
-
-function generarCuotasCliente(cliente) {
-    if (cliente.tipoPlazo === 'sin_definir' || cliente.plazo <= 0) return;
-    
-    let montoTotal = cliente.monto;
-    if (cliente.interes && cliente.interes > 0) {
-        const resultado = calcularInteres(cliente.monto, cliente.interes, cliente.plazo, cliente.tipoPlazo);
-        montoTotal = resultado.montoTotal;
-    }
-    
-    const cuotaMensual = montoTotal / cliente.plazo;
-    const fechaInicio = new Date(cliente.fechaInicio);
-    
-    let diaFijo = cliente.diaFijo ? parseInt(cliente.diaFijo) : null;
-    let diasPago = cliente.diasPago ? cliente.diasPago.split(',').map(d => parseInt(d.trim())) : [];
-    
-    for (let i = 1; i <= cliente.plazo; i++) {
-        const fechaCuota = new Date(fechaInicio);
-        
-        switch(cliente.tipoPlazo) {
-            case 'diario':
-                fechaCuota.setDate(fechaCuota.getDate() + i);
-                break;
-            case 'semanal':
-                fechaCuota.setDate(fechaCuota.getDate() + (i * 7));
-                break;
-            case 'quincenal':
-                if (diasPago.length > 0) {
-                    const mes = fechaCuota.getMonth();
-                    const anio = fechaCuota.getFullYear();
-                    const diaIndex = (i - 1) % diasPago.length;
-                    let dia = diasPago[diaIndex];
-                    const ultimoDia = new Date(anio, mes + 1, 0).getDate();
-                    if (dia > ultimoDia) dia = ultimoDia;
-                    fechaCuota.setDate(dia);
-                    if (i > 1 && diaIndex === 0) fechaCuota.setMonth(fechaCuota.getMonth() + 1);
-                } else {
-                    fechaCuota.setDate(fechaCuota.getDate() + (i * 15));
-                }
-                break;
-            case 'mensual':
-            case 'personalizado':
-                if (diaFijo) {
-                    fechaCuota.setMonth(fechaCuota.getMonth() + i);
-                    const ultimoDia = new Date(fechaCuota.getFullYear(), fechaCuota.getMonth() + 1, 0).getDate();
-                    fechaCuota.setDate(Math.min(diaFijo, ultimoDia));
-                } else if (diasPago.length > 0) {
-                    const mes = fechaCuota.getMonth();
-                    const anio = fechaCuota.getFullYear();
-                    const diaIndex = (i - 1) % diasPago.length;
-                    let dia = diasPago[diaIndex];
-                    const ultimoDia = new Date(anio, mes + 1, 0).getDate();
-                    if (dia > ultimoDia) dia = ultimoDia;
-                    fechaCuota.setDate(dia);
-                    if (i > 1 && diaIndex === 0) fechaCuota.setMonth(fechaCuota.getMonth() + 1);
-                } else {
-                    fechaCuota.setMonth(fechaCuota.getMonth() + i);
-                }
-                break;
-        }
-        
-        const fechaCuotaStr = fechaCuota.toISOString().split('T')[0];
-        
-        const existePagada = cuotas.some(c => 
-            c.clienteId === cliente.id && c.fecha === fechaCuotaStr && c.estado === 'pagada'
-        );
-        
-        if (!existePagada) {
-            cuotas.push({
-                id: Date.now() + i + cliente.id + Math.random(),
-                clienteId: cliente.id,
-                clienteNombre: cliente.nombre,
-                fecha: fechaCuotaStr,
-                monto: parseFloat(cuotaMensual.toFixed(2)),
-                estado: 'pendiente'
-            });
-        }
-    }
-}
-
-// ==========================================
-// REPORTAR CUOTA (DESDE TABLA)
+// REPORTAR CUOTA
 // ==========================================
 
 function reportarCuota(clienteId, montoPagar) {
     const cliente = clientes.find(c => c.id === clienteId);
     if (!cliente) return;
     
-    // Redirigir a la sección de pagos con el cliente seleccionado
     mostrarSeccion('pagos');
     
     setTimeout(() => {
@@ -890,6 +1171,10 @@ function reportarCuota(clienteId, montoPagar) {
         if (select) {
             select.value = clienteId;
             actualizarInfoPago();
+        }
+        if (montoPagar) {
+            const montoInput = document.getElementById('pagoMonto');
+            if (montoInput) montoInput.value = Math.round(montoPagar);
         }
     }, 100);
 }
@@ -911,7 +1196,6 @@ function reportarCuotaPersonalizada(clienteId) {
         return;
     }
     
-    // Ir a la sección de pagos con datos precargados
     mostrarSeccion('pagos');
     
     setTimeout(() => {
@@ -930,9 +1214,6 @@ function reportarCuotaPersonalizada(clienteId) {
 // ==========================================
 
 function verHistorialCliente(clienteId) {
-    const cliente = clientes.find(c => c.id === clienteId);
-    if (!cliente) return;
-    
     mostrarSeccion('pagos');
     
     setTimeout(() => {
@@ -948,19 +1229,18 @@ function verHistorialCliente(clienteId) {
 // ELIMINAR CLIENTE
 // ==========================================
 
-function eliminarCliente(id) {
+async function eliminarCliente(id) {
     const cliente = clientes.find(c => c.id === id);
     if (!cliente) return;
     
     if (!confirm(`¿Eliminar a "${cliente.nombre}"?`)) return;
     
+    await apiDelete(`/api/clientes?id=${id}`);
+    
     clientes = clientes.filter(c => c.id !== id);
     cuotas = cuotas.filter(c => c.clienteId !== id);
     historialPagos = historialPagos.filter(h => h.clienteId !== id);
     
-    guardarClientes();
-    guardarCuotas();
-    guardarHistorial();
     renderizarTodo();
     mostrarNotificacion(`Cliente "${cliente.nombre}" eliminado`, 'success');
 }
@@ -969,19 +1249,22 @@ function eliminarCliente(id) {
 // VERIFICAR ATRASOS
 // ==========================================
 
-function verificarAtrasos() {
+async function verificarAtrasos() {
     const hoy = new Date().toISOString().split('T')[0];
     let atrasados = [];
     
-    cuotas.forEach(cuota => {
+    for (const cuota of cuotas) {
         if (cuota.estado === 'pendiente' && cuota.fecha < hoy) {
             cuota.estado = 'atrasada';
             atrasados.push(cuota.clienteNombre);
+            await apiPut('/api/cuotas', {
+                id: cuota.id,
+                estado: 'atrasada'
+            });
         }
-    });
+    }
     
     if (atrasados.length > 0) {
-        guardarCuotas();
         const badge = document.getElementById('badgeNotificaciones');
         const navBadge = document.getElementById('navBadge');
         if (badge) badge.textContent = atrasados.length;
@@ -994,21 +1277,29 @@ function verificarAtrasos() {
 // GENERAR CUOTAS PENDIENTES
 // ==========================================
 
-function generarCuotasPendientes() {
+async function generarCuotasPendientes() {
     if (clientes.length === 0) {
         mostrarNotificacion('No hay clientes', 'error');
         return;
     }
     
-    const cuotasPagadas = cuotas.filter(c => c.estado === 'pagada');
-    cuotas = cuotasPagadas;
+    if (!confirm('¿Regenerar todas las cuotas? Se perderán las cuotas pagadas.')) return;
     
-    clientes.forEach(cliente => {
+    for (const cliente of clientes) {
+        await apiDelete(`/api/cuotas?clienteId=${cliente.id}`);
+    }
+    
+    cuotas = [];
+    
+    for (const cliente of clientes) {
         if (cliente.tipoPlazo !== 'sin_definir' && cliente.plazo > 0) {
-            generarCuotasCliente(cliente);
+            await generarCuotasEnBD(cliente);
         }
-    });
-    guardarCuotas();
+    }
+    
+    const dataCuotas = await apiGet('/api/cuotas');
+    cuotas = (dataCuotas.cuotas || []).map(cuotaDesdeBD);
+    
     renderizarTodo();
     mostrarNotificacion('Cuotas regeneradas', 'success');
 }
@@ -1033,9 +1324,11 @@ function filtrarCalendario(periodo) {
     renderizarCalendario();
 }
 
-function sincronizarDatos() {
-    mostrarNotificacion('🔄 Sincronizando...', 'warning');
-    setTimeout(() => mostrarNotificacion('✅ Datos sincronizados', 'success'), 1000);
+async function sincronizarDatos() {
+    mostrarNotificacion('Sincronizando con la nube...', 'warning');
+    await cargarDatosLocales();
+    renderizarTodo();
+    mostrarNotificacion('Datos sincronizados', 'success');
 }
 
 // ==========================================
@@ -1200,8 +1493,8 @@ function renderizarCalendario() {
     let html = '';
     cuotasFiltradas.forEach(cuota => {
         const estadoClass = cuota.estado;
-        const estadoTexto = cuota.estado === 'pagada' ? '✅ Pagada' : 
-                           cuota.estado === 'atrasada' ? '⚠️ Atrasada' : '⏳ Pendiente';
+        const estadoTexto = cuota.estado === 'pagada' ? 'Pagada' : 
+                           cuota.estado === 'atrasada' ? 'Atrasada' : 'Pendiente';
         
         html += `
             <div class="cuota-item ${estadoClass}">
@@ -1462,7 +1755,7 @@ function exportarHistorialPagos() {
 }
 
 // ==========================================
-// REPORTES PDF
+// REPORTES PDF (SIN CAMBIOS)
 // ==========================================
 
 function generarReporteGeneral() {
@@ -1781,6 +2074,8 @@ window.registrarPago = registrarPago;
 window.actualizarInfoPago = actualizarInfoPago;
 window.exportarHistorialPagos = exportarHistorialPagos;
 window.renderizarHistorialPagos = renderizarHistorialPagos;
+window.editarPago = editarPago;
+window.eliminarPago = eliminarPago;
 window.generarCuotasPendientes = generarCuotasPendientes;
 window.verificarAtrasos = verificarAtrasos;
 window.sincronizarDatos = sincronizarDatos;
@@ -1797,4 +2092,4 @@ window.generarReporteAtrasos = generarReporteAtrasos;
 window.generarReporteIntereses = generarReporteIntereses;
 window.generarReportePagos = generarReportePagos;
 
-console.log('✅ PrestaControl con sección de pagos iniciado');
+console.log('✅ PrestaControl con Netlify Database iniciado');
