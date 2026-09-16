@@ -61,7 +61,7 @@ function calcularInteres(capital, tasa, plazo, tipoPlazo) {
 }
 
 // ==========================================
-// DATOS INICIALES (SOLO SE USAN LA PRIMERA VEZ)
+// DATOS INICIALES
 // ==========================================
 
 function getClientesIniciales() {
@@ -89,6 +89,11 @@ function getClientesIniciales() {
 
 async function apiGet(url) {
     const res = await fetch(url);
+    if (!res.ok) {
+        const text = await res.text();
+        console.error(`Error GET ${url}:`, res.status, text);
+        throw new Error(`GET ${url} failed: ${res.status}`);
+    }
     return await res.json();
 }
 
@@ -98,6 +103,11 @@ async function apiPost(url, data) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data)
     });
+    if (!res.ok) {
+        const text = await res.text();
+        console.error(`Error POST ${url}:`, res.status, text);
+        throw new Error(`POST ${url} failed: ${res.status}`);
+    }
     return await res.json();
 }
 
@@ -107,11 +117,20 @@ async function apiPut(url, data) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data)
     });
+    if (!res.ok) {
+        const text = await res.text();
+        console.error(`Error PUT ${url}:`, res.status, text);
+        throw new Error(`PUT ${url} failed: ${res.status}`);
+    }
     return await res.json();
 }
 
 async function apiDelete(url) {
     const res = await fetch(url, { method: 'DELETE' });
+    if (!res.ok) {
+        console.error(`Error DELETE ${url}:`, res.status);
+        throw new Error(`DELETE ${url} failed: ${res.status}`);
+    }
     return await res.json();
 }
 
@@ -129,7 +148,7 @@ function clienteDesdeBD(c) {
         interes: parseFloat(c.interes) || 0,
         montoTotal: parseFloat(c.monto_total) || parseFloat(c.monto) || 0,
         interesTotal: parseFloat(c.interes_total) || 0,
-        fechaInicio: c.fecha_inicio ? c.fecha_inicio.split('T')[0] : '',
+        fechaInicio: c.fecha_inicio ? String(c.fecha_inicio).split('T')[0] : '',
         tipoPlazo: c.tipo_plazo || 'sin_definir',
         plazo: parseInt(c.plazo) || 0,
         saldo: parseFloat(c.saldo) || 0,
@@ -161,10 +180,10 @@ function cuotaDesdeBD(c) {
         id: parseInt(c.id),
         clienteId: parseInt(c.cliente_id),
         clienteNombre: c.cliente_nombre,
-        fecha: c.fecha ? c.fecha.split('T')[0] : '',
+        fecha: c.fecha ? String(c.fecha).split('T')[0] : '',
         monto: parseFloat(c.monto) || 0,
         estado: c.estado || 'pendiente',
-        fechaPago: c.fecha_pago ? c.fecha_pago.split('T')[0] : null,
+        fechaPago: c.fecha_pago ? String(c.fecha_pago).split('T')[0] : null,
         montoPagado: parseFloat(c.monto_pagado) || 0
     };
 }
@@ -175,7 +194,7 @@ function pagoDesdeBD(p) {
         clienteId: parseInt(p.cliente_id),
         clienteNombre: p.cliente_nombre,
         monto: parseFloat(p.monto) || 0,
-        fecha: p.fecha ? p.fecha.split('T')[0] : '',
+        fecha: p.fecha ? String(p.fecha).split('T')[0] : '',
         hora: p.hora || '',
         nota: p.nota || '',
         saldoAnterior: parseFloat(p.saldo_anterior) || 0,
@@ -192,35 +211,33 @@ async function cargarDatosLocales() {
     try {
         console.log('🔄 Cargando datos desde Netlify Database...');
         
-        // Cargar clientes
         const dataClientes = await apiGet('/api/clientes');
         clientes = (dataClientes.clientes || []).map(clienteDesdeBD);
         
-        // Cargar cuotas
         const dataCuotas = await apiGet('/api/cuotas');
         cuotas = (dataCuotas.cuotas || []).map(cuotaDesdeBD);
         
-        // Cargar pagos
         const dataPagos = await apiGet('/api/pagos');
         historialPagos = (dataPagos.pagos || []).map(pagoDesdeBD);
         
-        // Si no hay clientes, cargar los iniciales
         if (clientes.length === 0) {
             console.log('⚠️ Base de datos vacía. Cargando clientes iniciales...');
             const iniciales = getClientesIniciales();
             for (const cli of iniciales) {
-                const resultado = await apiPost('/api/clientes', clienteParaBD(cli));
-                if (resultado.cliente) {
-                    const nuevoCliente = clienteDesdeBD(resultado.cliente);
-                    clientes.push(nuevoCliente);
-                    
-                    // Generar cuotas si tiene plazo
-                    if (nuevoCliente.tipoPlazo !== 'sin_definir' && nuevoCliente.plazo > 0) {
-                        await generarCuotasEnBD(nuevoCliente);
+                try {
+                    const resultado = await apiPost('/api/clientes', clienteParaBD(cli));
+                    if (resultado.cliente) {
+                        const nuevoCliente = clienteDesdeBD(resultado.cliente);
+                        clientes.push(nuevoCliente);
+                        
+                        if (nuevoCliente.tipoPlazo !== 'sin_definir' && nuevoCliente.plazo > 0) {
+                            await generarCuotasEnBD(nuevoCliente);
+                        }
                     }
+                } catch (e) {
+                    console.error('Error creando cliente inicial:', e);
                 }
             }
-            // Recargar cuotas
             const dataCuotas2 = await apiGet('/api/cuotas');
             cuotas = (dataCuotas2.cuotas || []).map(cuotaDesdeBD);
         }
@@ -230,9 +247,6 @@ async function cargarDatosLocales() {
     } catch (error) {
         console.error('❌ Error cargando datos:', error);
         mostrarNotificacion('Error al conectar con la base de datos', 'error');
-        clientes = [];
-        cuotas = [];
-        historialPagos = [];
     }
 }
 
@@ -302,13 +316,17 @@ async function generarCuotasEnBD(cliente) {
         
         const fechaCuotaStr = fechaCuota.toISOString().split('T')[0];
         
-        await apiPost('/api/cuotas', {
-            clienteId: cliente.id,
-            clienteNombre: cliente.nombre,
-            fecha: fechaCuotaStr,
-            monto: parseFloat(cuotaMensual.toFixed(2)),
-            estado: 'pendiente'
-        });
+        try {
+            await apiPost('/api/cuotas', {
+                clienteId: cliente.id,
+                clienteNombre: cliente.nombre,
+                fecha: fechaCuotaStr,
+                monto: parseFloat(cuotaMensual.toFixed(2)),
+                estado: 'pendiente'
+            });
+        } catch (e) {
+            console.error('Error creando cuota:', e);
+        }
     }
 }
 
@@ -385,7 +403,8 @@ document.addEventListener('DOMContentLoaded', async function() {
     if (plazoInput) plazoInput.addEventListener('input', previsualizarInteres);
     if (tipoPlazoSelect) tipoPlazoSelect.addEventListener('change', previsualizarInteres);
     
-    setTimeout(verificarAtrasos, 1500);
+    // Verificar atrasos UNA SOLA VEZ al cargar
+    setTimeout(verificarAtrasos, 2000);
 });
 
 // ==========================================
@@ -436,63 +455,70 @@ async function registrarPago(event) {
     const saldoAnterior = cliente.saldo;
     const saldoRestante = cliente.saldo - monto;
     
-    // Registrar el pago en la base de datos
-    const resultado = await apiPost('/api/pagos', {
-        clienteId: cliente.id,
-        clienteNombre: cliente.nombre,
-        monto: monto,
-        fecha: fecha,
-        hora: new Date().toLocaleTimeString('es-ES'),
-        nota: nota,
-        saldoAnterior: saldoAnterior,
-        saldoRestante: saldoRestante
-    });
-    
-    if (resultado.pago) {
-        historialPagos.unshift(pagoDesdeBD(resultado.pago));
-    }
-    
-    // Actualizar saldo del cliente en la BD
-    cliente.saldo = saldoRestante;
-    await apiPut('/api/clientes', clienteParaBD(cliente));
-    
-    // Marcar cuota como pagada
-    const cuotaPendiente = cuotas
-        .filter(c => c.clienteId === clienteId && c.estado !== 'pagada')
-        .sort((a, b) => a.fecha.localeCompare(b.fecha))[0];
-    
-    if (cuotaPendiente) {
-        await apiPut('/api/cuotas', {
-            id: cuotaPendiente.id,
-            estado: 'pagada',
-            fechaPago: fecha,
-            montoPagado: monto
+    try {
+        const resultado = await apiPost('/api/pagos', {
+            clienteId: cliente.id,
+            clienteNombre: cliente.nombre,
+            monto: monto,
+            fecha: fecha,
+            hora: new Date().toLocaleTimeString('es-ES'),
+            nota: nota,
+            saldoAnterior: saldoAnterior,
+            saldoRestante: saldoRestante
         });
-        cuotaPendiente.estado = 'pagada';
-        cuotaPendiente.fechaPago = fecha;
-        cuotaPendiente.montoPagado = monto;
+        
+        if (resultado.pago) {
+            historialPagos.unshift(pagoDesdeBD(resultado.pago));
+        }
+        
+        cliente.saldo = saldoRestante;
+        await apiPut('/api/clientes', { ...clienteParaBD(cliente), id: cliente.id });
+        
+        const cuotaPendiente = cuotas
+            .filter(c => c.clienteId === clienteId && c.estado !== 'pagada')
+            .sort((a, b) => a.fecha.localeCompare(b.fecha))[0];
+        
+        if (cuotaPendiente) {
+            try {
+                await apiPut('/api/cuotas', {
+                    id: cuotaPendiente.id,
+                    estado: 'pagada',
+                    fechaPago: fecha,
+                    montoPagado: monto
+                });
+                cuotaPendiente.estado = 'pagada';
+                cuotaPendiente.fechaPago = fecha;
+                cuotaPendiente.montoPagado = monto;
+            } catch (e) {
+                console.error('Error marcando cuota:', e);
+            }
+        }
+        
+        const cuotasRestantes = cuotas.filter(c => c.clienteId === cliente.id && c.estado !== 'pagada').length;
+        const cuotasPagadas = cuotas.filter(c => c.clienteId === cliente.id && c.estado === 'pagada').length;
+        
+        let mensaje = `Pago registrado\n`;
+        mensaje += `Cliente: ${cliente.nombre}\n`;
+        mensaje += `Monto: ${formatoCOP(monto)}\n`;
+        mensaje += `Saldo restante: ${formatoCOP(cliente.saldo)}\n`;
+        mensaje += `Cuotas: ${cuotasPagadas} pagadas, ${cuotasRestantes} restantes`;
+        
+        mostrarNotificacion(mensaje, 'success');
+        
+        if (cliente.saldo <= 0) {
+            mostrarNotificacion(`¡${cliente.nombre} ha saldado su deuda!`, 'success');
+        }
+        
+        document.getElementById('formPago').reset();
+        document.getElementById('pagoFecha').value = new Date().toISOString().split('T')[0];
+        document.getElementById('infoPagoCliente').style.display = 'none';
+        
+        renderizarTodo();
+        
+    } catch (error) {
+        console.error('Error registrando pago:', error);
+        mostrarNotificacion('Error al registrar pago', 'error');
     }
-    
-    const cuotasRestantes = cuotas.filter(c => c.clienteId === cliente.id && c.estado !== 'pagada').length;
-    const cuotasPagadas = cuotas.filter(c => c.clienteId === cliente.id && c.estado === 'pagada').length;
-    
-    let mensaje = `Pago registrado\n`;
-    mensaje += `Cliente: ${cliente.nombre}\n`;
-    mensaje += `Monto: ${formatoCOP(monto)}\n`;
-    mensaje += `Saldo restante: ${formatoCOP(cliente.saldo)}\n`;
-    mensaje += `Cuotas: ${cuotasPagadas} pagadas, ${cuotasRestantes} restantes`;
-    
-    mostrarNotificacion(mensaje, 'success');
-    
-    if (cliente.saldo <= 0) {
-        mostrarNotificacion(`¡${cliente.nombre} ha saldado su deuda!`, 'success');
-    }
-    
-    document.getElementById('formPago').reset();
-    document.getElementById('pagoFecha').value = new Date().toISOString().split('T')[0];
-    document.getElementById('infoPagoCliente').style.display = 'none';
-    
-    renderizarTodo();
 }
 
 // ==========================================
@@ -786,37 +812,31 @@ async function editarPago(pagoId) {
         return;
     }
     
-    const montoAnterior = pago.monto;
-    
-    // Actualizar pago en BD
-    await apiPut('/api/pagos', {
-        id: pago.id,
-        monto: nuevoMonto,
-        fecha: nuevaFecha,
-        nota: nuevaNota,
-        saldoRestante: pago.saldoAnterior - nuevoMonto
-    });
-    
-    // Actualizar saldo del cliente
-    cliente.saldo = parseFloat((cliente.saldo - diferenciaMonto).toFixed(2));
-    await apiPut('/api/clientes', clienteParaBD(cliente));
-    
-    // Actualizar objeto local
-    pago.monto = nuevoMonto;
-    pago.fecha = nuevaFecha;
-    pago.nota = nuevaNota;
-    pago.saldoRestante = pago.saldoAnterior - nuevoMonto;
-    pago.editado = true;
-    
-    mostrarNotificacion(
-        `Pago actualizado\n` +
-        `Antes: ${formatoCOP(montoAnterior)}\n` +
-        `Ahora: ${formatoCOP(nuevoMonto)}\n` +
-        `Saldo cliente: ${formatoCOP(cliente.saldo)}`,
-        'success'
-    );
-    
-    renderizarTodo();
+    try {
+        await apiPut('/api/pagos', {
+            id: pago.id,
+            monto: nuevoMonto,
+            fecha: nuevaFecha,
+            nota: nuevaNota,
+            saldoRestante: pago.saldoAnterior - nuevoMonto
+        });
+        
+        cliente.saldo = parseFloat((cliente.saldo - diferenciaMonto).toFixed(2));
+        await apiPut('/api/clientes', { ...clienteParaBD(cliente), id: cliente.id });
+        
+        pago.monto = nuevoMonto;
+        pago.fecha = nuevaFecha;
+        pago.nota = nuevaNota;
+        pago.saldoRestante = pago.saldoAnterior - nuevoMonto;
+        pago.editado = true;
+        
+        mostrarNotificacion(`Pago actualizado correctamente`, 'success');
+        renderizarTodo();
+        
+    } catch (error) {
+        console.error('Error editando pago:', error);
+        mostrarNotificacion('Error al editar pago', 'error');
+    }
 }
 
 // ==========================================
@@ -844,47 +864,21 @@ async function eliminarPago(pagoId) {
         `El saldo del cliente se aumentará nuevamente.`
     )) return;
     
-    // Devolver el monto al saldo del cliente
-    cliente.saldo = parseFloat((cliente.saldo + pago.monto).toFixed(2));
-    await apiPut('/api/clientes', clienteParaBD(cliente));
-    
-    // Eliminar el pago de la BD
-    await apiDelete(`/api/pagos?id=${pagoId}`);
-    
-    // Revertir cuota
-    const cuotasCliente = cuotas.filter(c => 
-        c.clienteId === cliente.id && 
-        c.estado === 'pagada' &&
-        c.fechaPago === pago.fecha
-    );
-    
-    if (cuotasCliente.length > 0) {
-        const cuotaCoincidente = cuotasCliente.find(c => 
-            Math.abs((c.montoPagado || c.monto) - pago.monto) < 1
-        );
+    try {
+        cliente.saldo = parseFloat((cliente.saldo + pago.monto).toFixed(2));
+        await apiPut('/api/clientes', { ...clienteParaBD(cliente), id: cliente.id });
         
-        if (cuotaCoincidente) {
-            await apiPut('/api/cuotas', {
-                id: cuotaCoincidente.id,
-                estado: 'pendiente',
-                fechaPago: null,
-                montoPagado: null
-            });
-        }
+        await apiDelete(`/api/pagos?id=${pagoId}`);
+        
+        historialPagos = historialPagos.filter(p => p.id !== pagoId);
+        
+        mostrarNotificacion(`Pago eliminado. Saldo actualizado: ${formatoCOP(cliente.saldo)}`, 'success');
+        renderizarTodo();
+        
+    } catch (error) {
+        console.error('Error eliminando pago:', error);
+        mostrarNotificacion('Error al eliminar pago', 'error');
     }
-    
-    // Eliminar del array local
-    historialPagos = historialPagos.filter(p => p.id !== pagoId);
-    cuotas = cuotas.filter(c => !(c.fechaPago === pago.fecha && Math.abs((c.montoPagado || c.monto) - pago.monto) < 1));
-    
-    mostrarNotificacion(
-        `Pago eliminado\n` +
-        `Se devolvieron ${formatoCOP(pago.monto)} al saldo\n` +
-        `Nuevo saldo: ${formatoCOP(cliente.saldo)}`,
-        'success'
-    );
-    
-    renderizarTodo();
 }
 
 // ==========================================
@@ -1064,96 +1058,98 @@ async function guardarCliente(event) {
         interesTotal = resultado.interesTotal;
     }
     
-    if (id) {
-        // EDITAR
-        const clienteExistente = clientes.find(c => c.id === parseInt(id));
-        if (!clienteExistente) {
-            mostrarNotificacion('Cliente no encontrado', 'error');
-            return;
-        }
-        
-        const cuotasPagadas = cuotas.filter(c => c.clienteId === clienteExistente.id && c.estado === 'pagada');
-        const totalPagado = cuotasPagadas.reduce((sum, c) => sum + c.monto, 0);
-        
-        const clienteActualizado = {
-            ...clienteExistente,
-            nombre: nombreVal,
-            telefono: telefonoVal || '—',
-            monto: montoVal,
-            interes: interesVal,
-            montoTotal: montoTotal,
-            interesTotal: interesTotal,
-            fechaInicio: fechaInicioVal,
-            tipoPlazo: tipoPlazoVal,
-            plazo: plazoVal,
-            diasPago: diasPagoVal || '',
-            diaFijo: diaFijoVal || '',
-            saldo: montoTotal - totalPagado
-        };
-        
-        await apiPut('/api/clientes', { ...clienteParaBD(clienteActualizado), id: clienteExistente.id });
-        
-        // Actualizar objeto local
-        Object.assign(clienteExistente, clienteActualizado);
-        
-        // Eliminar cuotas antiguas y regenerar
-        await apiDelete(`/api/cuotas?clienteId=${clienteExistente.id}`);
-        cuotas = cuotas.filter(c => c.clienteId !== clienteExistente.id);
-        
-        if (tipoPlazoVal !== 'sin_definir' && plazoVal > 0) {
-            await generarCuotasEnBD(clienteExistente);
-            const dataCuotas = await apiGet('/api/cuotas');
-            cuotas = (dataCuotas.cuotas || []).map(cuotaDesdeBD);
-        }
-        
-        mostrarNotificacion(`Cliente "${nombreVal}" actualizado`, 'success');
-        cancelarEdicion();
-        
-    } else {
-        // CREAR
-        const nuevoCliente = {
-            nombre: nombreVal,
-            telefono: telefonoVal || '—',
-            email: '',
-            monto: montoVal,
-            interes: interesVal,
-            montoTotal: montoTotal,
-            interesTotal: interesTotal,
-            fechaInicio: fechaInicioVal,
-            tipoPlazo: tipoPlazoVal,
-            plazo: plazoVal,
-            saldo: montoTotal,
-            diasPago: diasPagoVal || '',
-            diaFijo: diaFijoVal || ''
-        };
-        
-        const resultado = await apiPost('/api/clientes', clienteParaBD(nuevoCliente));
-        
-        if (resultado.cliente) {
-            const clienteCreado = clienteDesdeBD(resultado.cliente);
-            clientes.push(clienteCreado);
+    try {
+        if (id) {
+            const clienteExistente = clientes.find(c => c.id === parseInt(id));
+            if (!clienteExistente) {
+                mostrarNotificacion('Cliente no encontrado', 'error');
+                return;
+            }
+            
+            const cuotasPagadas = cuotas.filter(c => c.clienteId === clienteExistente.id && c.estado === 'pagada');
+            const totalPagado = cuotasPagadas.reduce((sum, c) => sum + c.monto, 0);
+            
+            const clienteActualizado = {
+                ...clienteExistente,
+                nombre: nombreVal,
+                telefono: telefonoVal || '—',
+                monto: montoVal,
+                interes: interesVal,
+                montoTotal: montoTotal,
+                interesTotal: interesTotal,
+                fechaInicio: fechaInicioVal,
+                tipoPlazo: tipoPlazoVal,
+                plazo: plazoVal,
+                diasPago: diasPagoVal || '',
+                diaFijo: diaFijoVal || '',
+                saldo: montoTotal - totalPagado
+            };
+            
+            await apiPut('/api/clientes', { ...clienteParaBD(clienteActualizado), id: clienteExistente.id });
+            
+            Object.assign(clienteExistente, clienteActualizado);
+            
+            await apiDelete(`/api/cuotas?clienteId=${clienteExistente.id}`);
+            cuotas = cuotas.filter(c => c.clienteId !== clienteExistente.id);
             
             if (tipoPlazoVal !== 'sin_definir' && plazoVal > 0) {
-                await generarCuotasEnBD(clienteCreado);
+                await generarCuotasEnBD(clienteExistente);
                 const dataCuotas = await apiGet('/api/cuotas');
                 cuotas = (dataCuotas.cuotas || []).map(cuotaDesdeBD);
             }
             
-            if (formCliente) formCliente.reset();
-            if (fechaInicio) fechaInicio.value = new Date().toISOString().split('T')[0];
-            if (campoDiasPago) campoDiasPago.style.display = 'none';
-            if (previewInteres) previewInteres.innerHTML = '';
+            mostrarNotificacion(`Cliente "${nombreVal}" actualizado`, 'success');
+            cancelarEdicion();
             
-            let mensaje = `"${nombreVal}" agregado con ${formatoCOP(montoVal)}`;
-            if (interesVal > 0) {
-                mensaje += `\nGanancia: ${formatoCOP(interesTotal)}`;
-                mensaje += `\nTotal a cobrar: ${formatoCOP(montoTotal)}`;
+        } else {
+            const nuevoCliente = {
+                nombre: nombreVal,
+                telefono: telefonoVal || '—',
+                email: '',
+                monto: montoVal,
+                interes: interesVal,
+                montoTotal: montoTotal,
+                interesTotal: interesTotal,
+                fechaInicio: fechaInicioVal,
+                tipoPlazo: tipoPlazoVal,
+                plazo: plazoVal,
+                saldo: montoTotal,
+                diasPago: diasPagoVal || '',
+                diaFijo: diaFijoVal || ''
+            };
+            
+            const resultado = await apiPost('/api/clientes', clienteParaBD(nuevoCliente));
+            
+            if (resultado.cliente) {
+                const clienteCreado = clienteDesdeBD(resultado.cliente);
+                clientes.push(clienteCreado);
+                
+                if (tipoPlazoVal !== 'sin_definir' && plazoVal > 0) {
+                    await generarCuotasEnBD(clienteCreado);
+                    const dataCuotas = await apiGet('/api/cuotas');
+                    cuotas = (dataCuotas.cuotas || []).map(cuotaDesdeBD);
+                }
+                
+                if (formCliente) formCliente.reset();
+                if (fechaInicio) fechaInicio.value = new Date().toISOString().split('T')[0];
+                if (campoDiasPago) campoDiasPago.style.display = 'none';
+                if (previewInteres) previewInteres.innerHTML = '';
+                
+                let mensaje = `"${nombreVal}" agregado con ${formatoCOP(montoVal)}`;
+                if (interesVal > 0) {
+                    mensaje += `\nGanancia: ${formatoCOP(interesTotal)}`;
+                    mensaje += `\nTotal a cobrar: ${formatoCOP(montoTotal)}`;
+                }
+                mostrarNotificacion(mensaje, 'success');
             }
-            mostrarNotificacion(mensaje, 'success');
         }
+        
+        renderizarTodo();
+        
+    } catch (error) {
+        console.error('Error guardando cliente:', error);
+        mostrarNotificacion('Error al guardar cliente', 'error');
     }
-    
-    renderizarTodo();
 }
 
 // ==========================================
@@ -1235,41 +1231,62 @@ async function eliminarCliente(id) {
     
     if (!confirm(`¿Eliminar a "${cliente.nombre}"?`)) return;
     
-    await apiDelete(`/api/clientes?id=${id}`);
-    
-    clientes = clientes.filter(c => c.id !== id);
-    cuotas = cuotas.filter(c => c.clienteId !== id);
-    historialPagos = historialPagos.filter(h => h.clienteId !== id);
-    
-    renderizarTodo();
-    mostrarNotificacion(`Cliente "${cliente.nombre}" eliminado`, 'success');
+    try {
+        await apiDelete(`/api/clientes?id=${id}`);
+        
+        clientes = clientes.filter(c => c.id !== id);
+        cuotas = cuotas.filter(c => c.clienteId !== id);
+        historialPagos = historialPagos.filter(h => h.clienteId !== id);
+        
+        renderizarTodo();
+        mostrarNotificacion(`Cliente "${cliente.nombre}" eliminado`, 'success');
+        
+    } catch (error) {
+        console.error('Error eliminando cliente:', error);
+        mostrarNotificacion('Error al eliminar cliente', 'error');
+    }
 }
 
 // ==========================================
-// VERIFICAR ATRASOS
+// VERIFICAR ATRASOS (CORREGIDO - SIN BUCLE)
 // ==========================================
 
 async function verificarAtrasos() {
     const hoy = new Date().toISOString().split('T')[0];
     let atrasados = [];
+    let cuotasAActualizar = [];
     
+    // Identificar cuáles necesitan actualización (SIN hacer PUT todavía)
     for (const cuota of cuotas) {
         if (cuota.estado === 'pendiente' && cuota.fecha < hoy) {
             cuota.estado = 'atrasada';
             atrasados.push(cuota.clienteNombre);
-            await apiPut('/api/cuotas', {
-                id: cuota.id,
-                estado: 'atrasada'
-            });
+            cuotasAActualizar.push(cuota.id);
         }
     }
     
-    if (atrasados.length > 0) {
+    // Solo hacer las llamadas a la API si hay algo que actualizar
+    if (cuotasAActualizar.length > 0) {
+        for (const id of cuotasAActualizar) {
+            try {
+                await apiPut('/api/cuotas', {
+                    id: id,
+                    estado: 'atrasada'
+                });
+            } catch (e) {
+                console.error('Error actualizando cuota atrasada:', id, e);
+            }
+        }
+        
         const badge = document.getElementById('badgeNotificaciones');
         const navBadge = document.getElementById('navBadge');
         if (badge) badge.textContent = atrasados.length;
         if (navBadge) navBadge.textContent = atrasados.length;
-        renderizarTodo();
+        
+        // Actualizar solo lo necesario (NO renderizarTodo que causa bucle)
+        renderizarClientes();
+        renderizarCalendario();
+        actualizarEstadisticas();
     }
 }
 
@@ -1285,23 +1302,29 @@ async function generarCuotasPendientes() {
     
     if (!confirm('¿Regenerar todas las cuotas? Se perderán las cuotas pagadas.')) return;
     
-    for (const cliente of clientes) {
-        await apiDelete(`/api/cuotas?clienteId=${cliente.id}`);
-    }
-    
-    cuotas = [];
-    
-    for (const cliente of clientes) {
-        if (cliente.tipoPlazo !== 'sin_definir' && cliente.plazo > 0) {
-            await generarCuotasEnBD(cliente);
+    try {
+        for (const cliente of clientes) {
+            await apiDelete(`/api/cuotas?clienteId=${cliente.id}`);
         }
+        
+        cuotas = [];
+        
+        for (const cliente of clientes) {
+            if (cliente.tipoPlazo !== 'sin_definir' && cliente.plazo > 0) {
+                await generarCuotasEnBD(cliente);
+            }
+        }
+        
+        const dataCuotas = await apiGet('/api/cuotas');
+        cuotas = (dataCuotas.cuotas || []).map(cuotaDesdeBD);
+        
+        renderizarTodo();
+        mostrarNotificacion('Cuotas regeneradas', 'success');
+        
+    } catch (error) {
+        console.error('Error regenerando cuotas:', error);
+        mostrarNotificacion('Error al regenerar cuotas', 'error');
     }
-    
-    const dataCuotas = await apiGet('/api/cuotas');
-    cuotas = (dataCuotas.cuotas || []).map(cuotaDesdeBD);
-    
-    renderizarTodo();
-    mostrarNotificacion('Cuotas regeneradas', 'success');
 }
 
 // ==========================================
@@ -1755,7 +1778,7 @@ function exportarHistorialPagos() {
 }
 
 // ==========================================
-// REPORTES PDF (SIN CAMBIOS)
+// REPORTES PDF
 // ==========================================
 
 function generarReporteGeneral() {
@@ -2037,7 +2060,7 @@ function generarReportePagos() {
 
 function formatearFecha(fecha) {
     if (!fecha) return '—';
-    const partes = fecha.split('-');
+    const partes = String(fecha).split('-');
     const meses = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 
                    'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
     return `${parseInt(partes[2])} ${meses[parseInt(partes[1]) - 1]} ${partes[0]}`;

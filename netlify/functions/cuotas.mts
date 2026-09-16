@@ -4,13 +4,11 @@ import type { Config } from "@netlify/functions";
 export default async (req: Request) => {
   const db = getDatabase();
   
-  // GET - Listar todas las cuotas
   if (req.method === "GET") {
     const cuotas = await db.sql`SELECT * FROM cuotas ORDER BY fecha ASC`;
     return Response.json({ cuotas });
   }
   
-  // POST - Crear cuota
   if (req.method === "POST") {
     try {
       const body = await req.json();
@@ -21,33 +19,43 @@ export default async (req: Request) => {
       `;
       return Response.json({ cuota: result[0] });
     } catch (error) {
+      console.error('Error POST cuota:', error);
       return Response.json({ error: String(error) }, { status: 500 });
     }
   }
   
-  // PUT - Actualizar cuota (marcar como pagada)
   if (req.method === "PUT") {
     try {
       const body = await req.json();
+      
+      if (body.estado === 'atrasada') {
+        const result = await db.sql`
+          UPDATE cuotas SET estado = 'atrasada' WHERE id = ${body.id} RETURNING *
+        `;
+        return Response.json({ cuota: result[0] });
+      }
+      
       const result = await db.sql`
         UPDATE cuotas SET
-          estado = ${body.estado || 'pagada'},
-          fecha_pago = ${body.fechaPago},
-          monto_pagado = ${body.montoPagado}
+          estado = 'pagada',
+          fecha_pago = ${body.fechaPago || null},
+          monto_pagado = ${body.montoPagado || null}
         WHERE id = ${body.id}
         RETURNING *
       `;
       return Response.json({ cuota: result[0] });
     } catch (error) {
+      console.error('Error PUT cuota:', error);
       return Response.json({ error: String(error) }, { status: 500 });
     }
   }
   
-  // DELETE - Eliminar cuotas de un cliente
   if (req.method === "DELETE") {
     const url = new URL(req.url);
     const clienteId = url.searchParams.get("clienteId");
-    await db.sql`DELETE FROM cuotas WHERE cliente_id = ${clienteId}`;
+    if (clienteId) {
+      await db.sql`DELETE FROM cuotas WHERE cliente_id = ${clienteId}`;
+    }
     return Response.json({ success: true });
   }
   
